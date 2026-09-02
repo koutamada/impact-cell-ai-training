@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>計算機</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>計算機</h1>
+    <div class="layout">
+      <section class="calculator" aria-label="電卓">
+        <div id="display" class="display">
+          <p id="sub-display" class="sub-display" aria-label="現在の式"></p>
+          <p id="main-display" class="main-display" aria-label="入力値または計算結果" aria-live="polite" aria-atomic="true">0</p>
+          <p id="error-display" class="main-display" role="alert" hidden></p>
+        </div>
+        <div class="keypad" role="group" aria-label="計算ボタン">
+          <button type="button" data-action="AC" class="wide utility" aria-label="AC 全クリア">AC</button>
+          <button type="button" data-action="backspace" class="utility" aria-label="1文字削除">←</button>
+          <button type="button" data-action="÷" class="operator" aria-label="わる">÷</button>
+          <button type="button" data-action="7">7</button>
+          <button type="button" data-action="8">8</button>
+          <button type="button" data-action="9">9</button>
+          <button type="button" data-action="×" class="operator" aria-label="かける">×</button>
+          <button type="button" data-action="4">4</button>
+          <button type="button" data-action="5">5</button>
+          <button type="button" data-action="6">6</button>
+          <button type="button" data-action="−" class="operator" aria-label="ひく">−</button>
+          <button type="button" data-action="1">1</button>
+          <button type="button" data-action="2">2</button>
+          <button type="button" data-action="3">3</button>
+          <button type="button" data-action="+" class="operator" aria-label="たす">+</button>
+          <button type="button" data-action="0" class="wide">0</button>
+          <button type="button" data-action="." aria-label="小数点">.</button>
+          <button type="button" data-action="=" class="equals" aria-label="イコール 計算確定">=</button>
+        </div>
+      </section>
+      <section class="history" aria-labelledby="history-heading">
+        <div class="history-header">
+          <h2 id="history-heading">履歴</h2>
+          <button id="clear-history" type="button" disabled>履歴をクリア</button>
+        </div>
+        <p id="history-empty">履歴はありません</p>
+        <div class="history-scroll" tabindex="0" role="region" aria-label="計算履歴一覧">
+          <ol id="history-list"></ol>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
