@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>メモ管理</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>メモ管理</h1>
+      <div class="file-actions">
+        <button id="export" type="button">エクスポート</button>
+        <button id="import-button" type="button">インポート</button>
+        <input id="import" type="file" accept="application/json" aria-label="インポートするJSONファイル" hidden>
+      </div>
+    </header>
+    <p id="error" class="error" role="alert" hidden></p>
+    <p id="storage-error" class="error" role="alert" hidden></p>
+    <div class="toolbar">
+      <label class="search-field" for="search">検索<input id="search" type="search" autocomplete="off" placeholder="メモを検索…"></label>
+      <label for="sort">並び替え
+        <select id="sort">
+          <option value="updated-desc">更新日時：新しい順</option>
+          <option value="updated-asc">更新日時：古い順</option>
+          <option value="created-desc">作成日時：新しい順</option>
+          <option value="title-asc">タイトル：昇順</option>
+        </select>
+      </label>
+      <button id="mode" type="button" aria-pressed="false">ゴミ箱</button>
+    </div>
+    <div id="workspace" class="workspace" data-screen="list">
+      <section class="list-pane" aria-labelledby="list-heading">
+        <div class="list-header">
+          <h2 id="list-heading">メモ一覧</h2>
+          <button id="new-note" class="primary" type="button">新規メモ</button>
+        </div>
+        <p id="list-empty">メモがありません</p>
+        <ul id="note-list"></ul>
+      </section>
+      <section class="editor-pane" aria-label="メモの内容">
+        <button id="back" class="back" type="button">一覧へ戻る</button>
+        <p id="editor-empty">メモを選択してください</p>
+        <div id="note-detail" hidden>
+          <div class="editor-header">
+            <div id="editor-tabs" role="group" aria-label="本文の表示切替">
+              <button id="edit-tab" type="button" aria-pressed="true" aria-controls="edit-view">編集</button>
+              <button id="preview-tab" type="button" aria-pressed="false" aria-controls="preview-view">プレビュー</button>
+            </div>
+            <p id="save-status" role="status" aria-live="polite"></p>
+          </div>
+          <div id="edit-view">
+            <label for="title">タイトル<input id="title" type="text" autocomplete="off"></label>
+            <label for="tags">タグ（カンマ区切り）<input id="tags" type="text" autocomplete="off"></label>
+            <label for="body">本文<textarea id="body" rows="16"></textarea></label>
+          </div>
+          <div id="preview-view" class="markdown" hidden></div>
+          <div id="trash-view" hidden>
+            <h3 id="trash-title"></h3>
+            <div id="trash-tags" class="tags"></div>
+            <p id="trash-body" class="raw-body"></p>
+          </div>
+          <div class="note-actions">
+            <button id="delete" type="button">削除</button>
+            <button id="restore" type="button" hidden>復元</button>
+            <button id="purge" class="danger" type="button" hidden>完全削除</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
