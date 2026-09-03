@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>単位変換ツール</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="converter">
+    <h1>単位変換ツール</h1>
+    <section class="panel" aria-label="単位変換">
+      <label for="category">カテゴリ</label>
+      <select id="category">
+        <option value="length">長さ</option>
+        <option value="weight">重量</option>
+        <option value="temperature">温度</option>
+      </select>
+
+      <fieldset>
+        <legend>変換元</legend>
+        <div class="value-row">
+          <label class="value-field" for="input-value">数値
+            <input id="input-value" type="text" inputmode="decimal" value="1" autocomplete="off" aria-describedby="message">
+          </label>
+          <label class="unit-field" for="from-unit">単位
+            <select id="from-unit"></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <p class="direction" aria-hidden="true">↓</p>
+
+      <fieldset>
+        <legend>変換先</legend>
+        <div class="value-row">
+          <div class="value-field">
+            <span id="result-label">結果</span>
+            <output id="result" for="input-value from-unit to-unit" aria-labelledby="result-label" aria-live="polite" aria-atomic="true"></output>
+          </div>
+          <label class="unit-field" for="to-unit">単位
+            <select id="to-unit"></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <p id="message" class="message" role="alert" aria-atomic="true"></p>
+    </section>
+  </main>
+</body>
+</html>
