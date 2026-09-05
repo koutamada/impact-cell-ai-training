@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSVデータビューア</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>CSVデータビューア</h1>
+
+    <section class="panel file-panel" aria-labelledby="file-title">
+      <h2 id="file-title">CSVファイル</h2>
+      <label for="csv-file">読み込むファイル</label>
+      <input id="csv-file" type="file" accept=".csv,text/csv">
+      <p id="selected-file" class="selected-file">選択されていません</p>
+    </section>
+
+    <section id="message-area" class="message-area" role="alert" aria-atomic="true"></section>
+
+    <p id="initial-guide" class="guide">CSVファイルを選択してください</p>
+
+    <section id="viewer" class="viewer" hidden>
+      <div class="toolbar">
+        <label for="search">絞り込み</label>
+        <input id="search" type="text" autocomplete="off" placeholder="全列から検索">
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <div id="table-container" class="table-container" tabindex="0">
+        <table aria-label="CSVデータ">
+          <thead>
+            <tr id="header-row"></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <p id="no-rows" class="no-rows" hidden></p>
+      </div>
+
+      <nav class="pagination" aria-label="ページ送り">
+        <button id="first-page" type="button" aria-label="先頭ページへ">≪</button>
+        <button id="previous-page" type="button" aria-label="前のページへ">＜</button>
+        <span id="page-status">1 / 1 ページ</span>
+        <button id="next-page" type="button" aria-label="次のページへ">＞</button>
+        <button id="last-page" type="button" aria-label="最終ページへ">≫</button>
+      </nav>
+    </section>
+  </main>
+</body>
+</html>
