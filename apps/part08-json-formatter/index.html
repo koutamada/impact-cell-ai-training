@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSON整形・検証ツール</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>JSON整形・検証ツール</h1>
+
+    <div class="workspace">
+      <section class="pane" aria-labelledby="input-title">
+        <h2 id="input-title">入力</h2>
+        <label for="json-input">JSON</label>
+        <textarea id="json-input" wrap="soft" spellcheck="false" aria-describedby="error-area" placeholder='{"name":"太郎","age":30}'></textarea>
+      </section>
+
+      <section class="pane" aria-labelledby="result-title">
+        <div class="result-header">
+          <h2 id="result-title">整形結果</h2>
+          <div class="actions">
+            <button id="copy-button" type="button" disabled>コピー</button>
+            <button id="save-button" type="button" disabled>保存</button>
+          </div>
+        </div>
+        <p id="result-notice" class="result-notice">JSONを入力してください</p>
+        <pre id="json-result" aria-label="整形済みJSON" tabindex="0"></pre>
+      </section>
+    </div>
+
+    <section id="error-area" class="error-area" role="alert" aria-atomic="true"></section>
+    <p id="operation-status" class="operation-status" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>
