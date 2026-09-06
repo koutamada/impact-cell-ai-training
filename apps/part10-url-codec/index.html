@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URLエンコード／デコードツール</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>URLエンコード／デコードツール</h1>
+
+    <div class="workspace">
+      <section class="pane" aria-labelledby="input-title">
+        <h2 id="input-title">入力</h2>
+        <label for="source-text">変換する文字列</label>
+        <textarea id="source-text" wrap="soft" spellcheck="false" placeholder="例：hello world"></textarea>
+        <div class="actions" aria-label="変換操作">
+          <button id="encode-button" type="button">エンコード</button>
+          <button id="decode-button" type="button">デコード</button>
+        </div>
+      </section>
+
+      <section class="pane" aria-labelledby="result-title">
+        <div class="result-heading">
+          <h2 id="result-title">結果</h2>
+          <div class="copy-controls">
+            <button id="copy-button" type="button" disabled>コピー</button>
+            <p id="copy-status" class="copy-status" role="status"></p>
+          </div>
+        </div>
+        <label id="result-label" for="result-text">結果</label>
+        <textarea id="result-text" wrap="soft" readonly></textarea>
+      </section>
+    </div>
+
+    <div class="messages">
+      <div id="error-message" class="error-message" role="alert">
+        <p id="error-main" class="error-main"></p>
+        <p id="error-detail" class="error-detail"></p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
