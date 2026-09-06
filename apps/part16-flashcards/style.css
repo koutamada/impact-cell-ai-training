@@ -1,0 +1,430 @@
+/* ==========================================================================
+   Part 16 フラッシュカード学習アプリ
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f4f5f7;
+  color: #1f2328;
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", Meiryo, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app__title {
+  margin: 8px 0 16px;
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+/* --------------------------------------------------------------------------
+   視覚非表示（読み上げ対象は維持する）
+   -------------------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   フォーカス
+   -------------------------------------------------------------------------- */
+
+a:focus-visible,
+button:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #1a56c4;
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   通知エリア
+   -------------------------------------------------------------------------- */
+
+.notice {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 2px solid #b02a1f;
+  border-radius: 8px;
+  background-color: #fdecea;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+.notice__message {
+  margin: 0 0 8px;
+  color: #7a1c14;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   パネル
+   -------------------------------------------------------------------------- */
+
+.panel {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #d3d7de;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.panel__heading {
+  margin: 0 0 12px;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   入力フォーム
+   -------------------------------------------------------------------------- */
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.field__input {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #8b929c;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.field__input[aria-invalid="true"] {
+  border-color: #b02a1f;
+  border-width: 2px;
+}
+
+.field__error {
+  margin: 4px 0 0;
+  color: #7a1c14;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.field__error[hidden] {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   ボタン
+   -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-block;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #6b7280;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1f2328;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  border-color: #c3c7ce;
+  background-color: #eceef1;
+  color: #767c86;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  border-color: #1a3e86;
+  background-color: #1a56c4;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.btn--primary:disabled {
+  border-color: #c3c7ce;
+  background-color: #eceef1;
+  color: #767c86;
+}
+
+.btn--flip {
+  width: 100%;
+  border-color: #3d4551;
+  background-color: #3d4551;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.btn--flip:disabled {
+  border-color: #c3c7ce;
+  background-color: #eceef1;
+  color: #767c86;
+}
+
+.btn--correct {
+  border-color: #1c6b3a;
+  background-color: #eaf6ee;
+  color: #14512c;
+  font-weight: 700;
+}
+
+.btn--incorrect {
+  border-color: #9a3b12;
+  background-color: #fdeee6;
+  color: #772d0d;
+  font-weight: 700;
+}
+
+.btn--correct:disabled,
+.btn--incorrect:disabled {
+  border-color: #c3c7ce;
+  background-color: #eceef1;
+  color: #767c86;
+}
+
+.btn--danger {
+  border-color: #9a3b12;
+  background-color: #ffffff;
+  color: #772d0d;
+}
+
+.btn--sub {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   学習カード
+   -------------------------------------------------------------------------- */
+
+#start-button {
+  margin-bottom: 16px;
+}
+
+.study-card {
+  margin-bottom: 12px;
+  padding: 20px 16px;
+  border: 2px solid #3d4551;
+  border-radius: 10px;
+  background-color: #fbfbfc;
+  min-height: 140px;
+}
+
+.study-card__face {
+  margin: 0 0 8px;
+  padding: 2px 10px;
+  display: inline-block;
+  border: 1px solid #3d4551;
+  border-radius: 999px;
+  background-color: #3d4551;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.study-card__face[hidden] {
+  display: none;
+}
+
+.study-card__body {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.study-actions {
+  margin-bottom: 12px;
+}
+
+.grade-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.grade-actions .btn {
+  flex: 1 1 0;
+}
+
+/* --------------------------------------------------------------------------
+   学習状況
+   -------------------------------------------------------------------------- */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #d3d7de;
+  border-radius: 8px;
+  background-color: #f7f8fa;
+}
+
+.stats__item {
+  min-width: 88px;
+}
+
+.stats__label {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #4c525c;
+}
+
+.stats__value {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   カード一覧
+   -------------------------------------------------------------------------- */
+
+.list-empty {
+  margin: 0;
+  color: #4c525c;
+}
+
+.list-empty[hidden] {
+  display: none;
+}
+
+.card-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #d3d7de;
+  border-radius: 8px;
+  background-color: #fbfbfc;
+}
+
+.card-item:last-child {
+  margin-bottom: 0;
+}
+
+.card-item__main {
+  min-width: 0;
+}
+
+.card-item__label {
+  margin: 0 0 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4c525c;
+}
+
+.card-item__text {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.card-item__stats {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #33383f;
+}
+
+.card-item__stat {
+  display: inline-block;
+  margin-right: 12px;
+  padding: 2px 8px;
+  border: 1px solid #b9bec6;
+  border-radius: 999px;
+  background-color: #ffffff;
+}
+
+.card-item__delete {
+  align-self: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   600px以上
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 600px) {
+  .app {
+    padding: 24px;
+  }
+
+  .app__title {
+    font-size: 1.75rem;
+  }
+
+  .study-card__body {
+    font-size: 1.5rem;
+  }
+
+  .card-item {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .card-item__main {
+    flex: 1 1 auto;
+  }
+
+  .card-item__delete {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+
+  .grade-actions .btn {
+    flex: 0 1 200px;
+  }
+}

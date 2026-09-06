@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>フラッシュカード学習</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <h1 class="app__title">フラッシュカード学習</h1>
+
+  <div class="notice" id="notice" tabindex="-1" hidden>
+    <p class="notice__message" id="notice-message"></p>
+    <button type="button" class="btn btn--sub" id="notice-close">閉じる</button>
+  </div>
+
+  <section class="panel" aria-labelledby="register-heading">
+    <h2 class="panel__heading" id="register-heading">カードを登録</h2>
+
+    <div class="field">
+      <label class="field__label" for="question-input">問題</label>
+      <textarea class="field__input" id="question-input" rows="3"></textarea>
+      <p class="field__error" id="question-error" hidden></p>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="answer-input">答え</label>
+      <textarea class="field__input" id="answer-input" rows="3"></textarea>
+      <p class="field__error" id="answer-error" hidden></p>
+    </div>
+
+    <button type="button" class="btn btn--primary" id="register-button">登録</button>
+  </section>
+
+  <section class="panel" aria-labelledby="study-heading">
+    <h2 class="panel__heading" id="study-heading">学習</h2>
+
+    <button type="button" class="btn btn--primary" id="start-button">学習を始める</button>
+
+    <div class="study-card" id="study-card">
+      <p class="study-card__face" id="study-face" hidden></p>
+      <p class="study-card__body" id="study-body"></p>
+    </div>
+
+    <div class="study-actions">
+      <button type="button" class="btn btn--flip" id="flip-button">答えを見る</button>
+    </div>
+
+    <div class="grade-actions">
+      <button type="button" class="btn btn--correct" id="correct-button">正解</button>
+      <button type="button" class="btn btn--incorrect" id="incorrect-button">不正解</button>
+    </div>
+
+    <dl class="stats">
+      <div class="stats__item">
+        <dt class="stats__label">総回答数</dt>
+        <dd class="stats__value" id="stat-total">0</dd>
+      </div>
+      <div class="stats__item">
+        <dt class="stats__label">正解数</dt>
+        <dd class="stats__value" id="stat-correct">0</dd>
+      </div>
+      <div class="stats__item">
+        <dt class="stats__label">不正解数</dt>
+        <dd class="stats__value" id="stat-incorrect">0</dd>
+      </div>
+      <div class="stats__item">
+        <dt class="stats__label">正解率</dt>
+        <dd class="stats__value" id="stat-accuracy">0.0%</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="panel" aria-labelledby="list-heading">
+    <h2 class="panel__heading" id="list-heading">カード一覧（<span id="list-count">0</span>件）</h2>
+    <p class="list-empty" id="list-empty">カードはまだありません。</p>
+    <ul class="card-list" id="card-list"></ul>
+  </section>
+
+</div>
+
+<div class="visually-hidden" id="live-region" aria-live="polite" aria-atomic="true"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
