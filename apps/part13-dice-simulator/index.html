@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダイスシミュレーター</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <p class="eyebrow">Part 13</p>
+      <h1>ダイスシミュレーター</h1>
+      <p class="lead">ダイスの面数と個数を選んで振れます。</p>
+    </header>
+
+    <section class="panel controls-panel" aria-labelledby="settings-heading">
+      <h2 id="settings-heading">設定</h2>
+      <form id="roll-form" novalidate>
+        <div class="fields">
+          <div class="field">
+            <label for="sides">ダイス</label>
+            <select id="sides" name="sides">
+              <option value="4">d4（4面）</option>
+              <option value="6" selected>d6（6面）</option>
+              <option value="8">d8（8面）</option>
+              <option value="10">d10（10面）</option>
+              <option value="12">d12（12面）</option>
+              <option value="20">d20（20面）</option>
+              <option value="100">d100（100面）</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="count">個数</label>
+            <div class="count-control">
+              <button id="count-decrease" class="count-step-button" type="button" aria-label="個数を1減らす">−</button>
+              <input id="count" name="count" type="number" inputmode="numeric" min="1" max="10" step="1" value="1" aria-describedby="count-error">
+              <button id="count-increase" class="count-step-button" type="button" aria-label="個数を1増やす">＋</button>
+            </div>
+          </div>
+        </div>
+        <button id="roll-button" class="roll-button" type="submit">振る</button>
+        <p id="count-error" class="error-message" role="alert"></p>
+      </form>
+    </section>
+
+    <section class="panel results-panel" aria-labelledby="results-heading">
+      <h2 id="results-heading">結果</h2>
+      <div id="dice-results" class="dice-results" aria-hidden="true">
+        <p class="empty-message">まだダイスを振っていません</p>
+      </div>
+      <p class="total">合計：<span id="total-value">—</span></p>
+      <p id="result-announcement" class="visually-hidden" aria-live="polite"></p>
+    </section>
+  </main>
+</body>
+</html>
