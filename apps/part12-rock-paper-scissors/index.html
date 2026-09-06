@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>じゃんけんゲーム</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <!-- 手のビジュアル定義（装飾用。表示はしない） -->
+  <svg class="hand-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="hand-rock" viewBox="0 0 120 120">
+        <g fill="#ffdcb2" stroke="#1f2a37" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="32" y="38" width="15" height="24" rx="7.5"></rect>
+          <rect x="49" y="34" width="15" height="28" rx="7.5"></rect>
+          <rect x="66" y="36" width="15" height="26" rx="7.5"></rect>
+          <rect x="82" y="42" width="14" height="20" rx="7"></rect>
+          <rect x="24" y="52" width="72" height="52" rx="24"></rect>
+          <rect x="20" y="62" width="38" height="16" rx="8"></rect>
+        </g>
+      </symbol>
+      <symbol id="hand-scissors" viewBox="0 0 120 120">
+        <g fill="#ffdcb2" stroke="#1f2a37" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="38" y="14" width="15" height="56" rx="7.5" transform="rotate(-18 45.5 42)"></rect>
+          <rect x="63" y="12" width="15" height="58" rx="7.5" transform="rotate(16 70.5 41)"></rect>
+          <rect x="26" y="54" width="68" height="50" rx="22"></rect>
+          <rect x="22" y="64" width="34" height="16" rx="8"></rect>
+        </g>
+      </symbol>
+      <symbol id="hand-paper" viewBox="0 0 120 120">
+        <g fill="#ffdcb2" stroke="#1f2a37" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="32" y="24" width="15" height="50" rx="7.5"></rect>
+          <rect x="49" y="16" width="15" height="58" rx="7.5"></rect>
+          <rect x="66" y="22" width="15" height="52" rx="7.5"></rect>
+          <rect x="82" y="34" width="14" height="40" rx="7"></rect>
+          <rect x="18" y="60" width="15" height="42" rx="7.5" transform="rotate(-40 25.5 81)"></rect>
+          <rect x="26" y="58" width="70" height="48" rx="22"></rect>
+        </g>
+      </symbol>
+      <symbol id="hand-unknown" viewBox="0 0 120 120">
+        <g fill="none" stroke="#9aa8bb" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="18" y="18" width="84" height="84" rx="22" stroke-dasharray="10 10"></rect>
+          <path d="M47 47a13 13 0 1 1 13 13v7"></path>
+          <path d="M60 82v.5"></path>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
+  <main class="app">
+    <h1>じゃんけんゲーム</h1>
+
+    <section class="panel" aria-labelledby="choice-title">
+      <h2 id="choice-title">手を選んでください</h2>
+      <div class="hand-buttons">
+        <button type="button" data-hand="rock">グー</button>
+        <button type="button" data-hand="scissors">チョキ</button>
+        <button type="button" data-hand="paper">パー</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="round-title">
+      <h2 id="round-title">今回の結果</h2>
+
+      <!-- 視覚表現。読み上げの重複を避けるため aria-hidden とし、
+           支援技術へは下の #round-result から伝える -->
+      <div id="round-board" class="round-board is-empty" aria-hidden="true">
+        <div class="round-board__side round-board__side--you">
+          <p class="round-board__caption">あなたの手</p>
+          <svg class="round-board__hand" viewBox="0 0 120 120" focusable="false">
+            <use id="you-hand-icon" href="#hand-unknown"></use>
+          </svg>
+          <p id="you-hand-name" class="round-board__name">—</p>
+        </div>
+
+        <div class="round-board__verdict">
+          <p id="round-verdict" class="round-board__verdict-text">まだ対戦していません</p>
+        </div>
+
+        <div class="round-board__side round-board__side--cpu">
+          <p class="round-board__caption">コンピュータの手</p>
+          <svg class="round-board__hand" viewBox="0 0 120 120" focusable="false">
+            <use id="cpu-hand-icon" href="#hand-unknown"></use>
+          </svg>
+          <p id="cpu-hand-name" class="round-board__name">—</p>
+        </div>
+      </div>
+
+      <p id="round-result" class="visually-hidden" aria-live="polite">まだ対戦していません</p>
+    </section>
+
+    <section class="panel" aria-labelledby="summary-title">
+      <h2 id="summary-title">対戦成績</h2>
+      <dl class="summary-grid">
+        <div><dt>総対戦数</dt><dd id="total-count">0</dd></div>
+        <div><dt>勝ち</dt><dd id="win-count" class="value-win">0</dd></div>
+        <div><dt>負け</dt><dd id="loss-count" class="value-lose">0</dd></div>
+        <div><dt>引き分け</dt><dd id="draw-count" class="value-draw">0</dd></div>
+        <div class="win-rate"><dt>勝率</dt><dd id="win-rate" class="value-rate">0.0%</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="history-title">
+      <h2 id="history-title">対戦履歴</h2>
+      <div class="history-scroll">
+        <ul id="history-list" class="history-list"></ul>
+        <p id="history-empty" class="history-empty">まだ対戦していません</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

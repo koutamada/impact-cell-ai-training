@@ -1,0 +1,386 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  background: #f2f5f8;
+  color: #243247;
+  font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app {
+  width: calc(100% - 32px);
+  max-width: 720px;
+  margin: 36px auto;
+}
+
+h1 {
+  margin: 0 0 24px;
+  text-align: center;
+  font-size: 1.8rem;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+
+.panel {
+  padding: 20px;
+  border: 1px solid #c6d1de;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.panel + .panel {
+  margin-top: 16px;
+}
+
+.hand-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+button {
+  min-width: 44px;
+  min-height: 48px;
+  padding: 10px 8px;
+  border: 1px solid #24558c;
+  border-radius: 8px;
+  background: #2867a8;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #205589;
+}
+
+button:focus-visible {
+  outline: 3px solid #2365ad;
+  outline-offset: 3px;
+}
+
+/* ---------- 今回の結果（手のビジュアル） ---------- */
+
+.hand-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.round-board {
+  display: grid;
+  grid-template-columns: 1fr minmax(150px, auto) 1fr;
+  grid-template-areas: "you verdict cpu";
+  align-items: center;
+  gap: 12px;
+}
+
+.round-board__side {
+  min-width: 0;
+  padding: 14px 10px 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.round-board__side--you {
+  grid-area: you;
+  background: #e6f0fb;
+}
+
+.round-board__side--cpu {
+  grid-area: cpu;
+  background: #e6f5ea;
+}
+
+.round-board__caption {
+  margin: 0;
+  color: #40506a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.round-board__hand {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  margin: 6px auto;
+  aspect-ratio: 1 / 1;
+}
+
+.round-board__name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.round-board__verdict {
+  grid-area: verdict;
+  min-width: 0;
+  text-align: center;
+}
+
+.round-board__verdict-text {
+  margin: 0;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.round-board.is-win .round-board__verdict-text {
+  background: #fdecec;
+  color: #b3261e;
+}
+
+.round-board.is-lose .round-board__verdict-text {
+  background: #eef2f7;
+  color: #35507a;
+}
+
+.round-board.is-draw .round-board__verdict-text {
+  background: #f3f0e8;
+  color: #6b5a2e;
+}
+
+.round-board.is-empty .round-board__verdict-text {
+  color: #526174;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.round-board.is-empty .round-board__side {
+  background: #f1f4f8;
+}
+
+.round-board.is-empty .round-board__name {
+  color: #8a97a8;
+}
+
+/* ---------- 対戦成績 ---------- */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.summary-grid > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: 7px;
+  background: #eef3f8;
+}
+
+.summary-grid dt {
+  color: #4a596d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.summary-grid dd {
+  margin: 3px 0 0;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+/* 数値の色は補助的な区別。項目名（勝ち・負け等）を必ず併記する */
+.summary-grid .value-win {
+  color: #1b7f43;
+}
+
+.summary-grid .value-lose {
+  color: #b3261e;
+}
+
+.summary-grid .value-draw {
+  color: #55627a;
+}
+
+.summary-grid .value-rate {
+  color: #23558f;
+}
+
+/* ---------- 対戦履歴 ---------- */
+
+.history-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #d3dce6;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.history-list li + li {
+  border-top: 1px solid #dce3eb;
+}
+
+.history-index {
+  flex: none;
+  color: #4a596d;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.history-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+}
+
+.history-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.history-badge {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.history-badge.is-win {
+  background: #e2f3e8;
+  color: #1b6b3a;
+}
+
+.history-badge.is-lose {
+  background: #fdeaea;
+  color: #a4231d;
+}
+
+.history-badge.is-draw {
+  background: #eaeff6;
+  color: #46536b;
+}
+
+.history-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: #526174;
+  font-weight: 700;
+}
+
+/* ---------- 共通 ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- 中間幅 ---------- */
+
+@media (max-width: 620px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .round-board__verdict-text {
+    font-size: 1.8rem;
+  }
+}
+
+/* ---------- スマートフォン ---------- */
+
+@media (max-width: 480px) {
+  .app {
+    width: calc(100% - 24px);
+    margin: 20px auto;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  /* 3列に詰め込まず、勝敗を上に置いて手を2列に並べる */
+  .round-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "verdict verdict"
+      "you cpu";
+    gap: 10px;
+  }
+
+  .round-board__verdict-text {
+    font-size: 2rem;
+  }
+
+  .round-board__hand {
+    max-width: 96px;
+  }
+
+  .round-board__name {
+    font-size: 1.15rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-grid .win-rate {
+    grid-column: 1 / -1;
+  }
+
+  .history-scroll {
+    max-height: 220px;
+  }
+
+  .history-list li {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .history-badge {
+    padding: 2px 8px;
+    font-size: 0.85rem;
+  }
+}
