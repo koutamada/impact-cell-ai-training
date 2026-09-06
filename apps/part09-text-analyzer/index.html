@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章分析ツール</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>文章分析ツール</h1>
+
+    <div class="workspace">
+      <section class="input-pane" aria-labelledby="input-title">
+        <h2 id="input-title">入力</h2>
+        <label for="text-input">文章</label>
+        <textarea id="text-input" wrap="soft" placeholder="分析する文章を入力してください" aria-describedby="message-area"></textarea>
+      </section>
+
+      <section id="results" class="results" aria-label="分析結果">
+        <section class="result-block" aria-labelledby="statistics-title">
+          <h2 id="statistics-title">基本統計</h2>
+          <dl class="statistics-grid">
+            <div><dt>総文字数</dt><dd id="total-characters">0</dd></div>
+            <div><dt>空白を除いた文字数</dt><dd id="non-whitespace-characters">0</dd></div>
+            <div><dt>単語数</dt><dd id="word-count">0</dd></div>
+            <div><dt>行数</dt><dd id="line-count">0</dd></div>
+            <div><dt>段落数</dt><dd id="paragraph-count">0</dd></div>
+          </dl>
+        </section>
+
+        <section class="result-block" aria-labelledby="character-types-title">
+          <h2 id="character-types-title">文字種集計</h2>
+          <p id="character-types-unsupported" class="unsupported" hidden>対応していません</p>
+          <dl id="character-types" class="character-types">
+            <div><dt>空白</dt><dd id="type-whitespace">0</dd></div>
+            <div><dt>数字</dt><dd id="type-number">0</dd></div>
+            <div><dt>英字</dt><dd id="type-latin">0</dd></div>
+            <div><dt>日本語</dt><dd id="type-japanese">0</dd></div>
+            <div><dt>記号・句読点</dt><dd id="type-symbol">0</dd></div>
+            <div><dt>その他</dt><dd id="type-other">0</dd></div>
+            <div class="type-total"><dt>合計</dt><dd id="type-total">0</dd></div>
+          </dl>
+        </section>
+
+        <section class="result-block" aria-labelledby="ranking-title">
+          <h2 id="ranking-title">頻出単語ランキング</h2>
+          <p id="ranking-note" class="ranking-note"></p>
+          <ol id="ranking" class="ranking"></ol>
+          <p id="ranking-message" class="ranking-message">単語がありません</p>
+        </section>
+      </section>
+    </div>
+
+    <section id="message-area" class="message-area" role="alert" aria-atomic="true"></section>
+  </main>
+</body>
+</html>
