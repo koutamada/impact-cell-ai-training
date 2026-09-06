@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数当てゲーム</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="game">
+    <h1>数当てゲーム</h1>
+
+    <section class="game-card" aria-label="数当てゲーム">
+      <div class="field">
+        <label for="difficulty">難易度</label>
+        <select id="difficulty">
+          <option value="easy">かんたん（1〜10）</option>
+          <option value="normal">ふつう（1〜50）</option>
+          <option value="hard">むずかしい（1〜100）</option>
+        </select>
+      </div>
+
+      <p id="range-message" class="range-message">1 〜 10 の数字を当ててください</p>
+
+      <form id="guess-form" novalidate>
+        <label for="guess-input">予想する数字</label>
+        <div class="guess-controls">
+          <input id="guess-input" type="number" inputmode="numeric" step="1" min="1" max="10" aria-describedby="input-error">
+          <button id="guess-button" type="submit">予想する</button>
+        </div>
+      </form>
+
+      <p id="input-error" class="error-message" role="alert"></p>
+      <p id="hint-message" class="hint-message" aria-live="polite">数字を予想してください</p>
+      <p id="attempts-message" class="attempts-message">挑戦回数：0回</p>
+
+      <button id="restart-button" class="restart-button" type="button" disabled>もう一度遊ぶ</button>
+    </section>
+  </main>
+</body>
+</html>
