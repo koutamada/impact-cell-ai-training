@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>お絵描きツール</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <h1>お絵描きツール</h1>
+
+    <section class="panel" aria-labelledby="color-title">
+      <h2 id="color-title">色</h2>
+      <div id="color-palette" class="color-palette"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="tool-title">
+      <h2 id="tool-title">ツール</h2>
+      <div class="tool-row">
+        <button type="button" id="tool-pen" class="tool-button" data-tool="pen" aria-pressed="true">ペン</button>
+        <button type="button" id="tool-eraser" class="tool-button" data-tool="eraser" aria-pressed="false">消しゴム</button>
+      </div>
+
+      <div class="width-row">
+        <label class="width-label" for="line-width">線の太さ</label>
+        <input type="range" id="line-width" min="1" max="30" step="1" value="5">
+        <output id="line-width-value" class="width-value" for="line-width">5</output>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="canvas-title">
+      <h2 id="canvas-title" class="visually-hidden">描画領域</h2>
+      <canvas id="draw-canvas" class="draw-canvas" aria-label="描画キャンバス"></canvas>
+    </section>
+
+    <section class="panel" aria-labelledby="action-title">
+      <h2 id="action-title" class="visually-hidden">保存と消去</h2>
+      <div class="action-row">
+        <button type="button" id="save-button" class="action-button action-button--save">PNGで保存</button>
+        <span class="action-spacer" aria-hidden="true"></span>
+        <button type="button" id="clear-button" class="action-button action-button--danger">すべて消す</button>
+      </div>
+      <p id="message" class="message" role="alert"></p>
+    </section>
+  </main>
+</body>
+</html>
