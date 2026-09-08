@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="未着手・作業中・完了の3列でタスクを管理するカンバンボード">
+    <title>カンバン型タスク管理ボード</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">INTERMEDIATE · PART 1</p>
+          <h1>カンバン型タスク管理ボード</h1>
+          <p class="subtitle">仕事の流れを3つのステータスで整理します</p>
+        </div>
+      </header>
+
+      <div id="app-notice" class="notice" role="alert" aria-live="assertive" hidden></div>
+
+      <div class="toolbar">
+        <button id="add-task-button" class="button button-primary" type="button">
+          <span aria-hidden="true">＋</span>
+          タスクを追加
+        </button>
+      </div>
+
+      <section class="board" aria-label="カンバンボード">
+        <section class="board-column column-todo" aria-labelledby="todo-heading">
+          <header class="column-header">
+            <span class="status-mark" aria-hidden="true"></span>
+            <h2 id="todo-heading">未着手</h2>
+            <span id="todo-count" class="task-count" aria-label="未着手のタスク件数">0</span>
+          </header>
+          <div id="todo-list" class="task-list" data-status="todo" aria-label="未着手のタスク一覧"></div>
+        </section>
+
+        <section class="board-column column-doing" aria-labelledby="doing-heading">
+          <header class="column-header">
+            <span class="status-mark" aria-hidden="true"></span>
+            <h2 id="doing-heading">作業中</h2>
+            <span id="doing-count" class="task-count" aria-label="作業中のタスク件数">0</span>
+          </header>
+          <div id="doing-list" class="task-list" data-status="doing" aria-label="作業中のタスク一覧"></div>
+        </section>
+
+        <section class="board-column column-done" aria-labelledby="done-heading">
+          <header class="column-header">
+            <span class="status-mark" aria-hidden="true"></span>
+            <h2 id="done-heading">完了</h2>
+            <span id="done-count" class="task-count" aria-label="完了のタスク件数">0</span>
+          </header>
+          <div id="done-list" class="task-list" data-status="done" aria-label="完了のタスク一覧"></div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="task-dialog" class="task-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <form id="task-form" class="task-form" novalidate>
+        <header class="dialog-header">
+          <div>
+            <p class="dialog-kicker">TASK DETAILS</p>
+            <h2 id="dialog-title">タスクを追加</h2>
+          </div>
+          <button id="close-dialog-button" class="icon-button" type="button" aria-label="タスク入力画面を閉じる">
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="form-body">
+          <div class="form-field">
+            <label for="task-title">タイトル <span class="required-mark">必須</span></label>
+            <input id="task-title" name="title" type="text" autocomplete="off" aria-describedby="title-error" required>
+            <p id="title-error" class="field-error" role="alert" hidden>タイトルを入力してください。</p>
+          </div>
+
+          <div class="form-field">
+            <label for="task-description">説明 <span class="optional-mark">任意</span></label>
+            <textarea id="task-description" name="description" rows="4"></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="task-due-date">期限 <span class="optional-mark">任意</span></label>
+            <input id="task-due-date" name="dueDate" type="date" aria-describedby="date-error">
+            <p id="date-error" class="field-error" role="alert" hidden>正しい日付を入力してください。</p>
+          </div>
+
+          <div class="form-field">
+            <label for="task-assignee">担当者 <span class="optional-mark">任意</span></label>
+            <input id="task-assignee" name="assignee" type="text" autocomplete="off">
+          </div>
+
+          <div class="form-field">
+            <label for="task-status">ステータス <span class="required-mark">必須</span></label>
+            <select id="task-status" name="status" aria-describedby="status-error" required>
+              <option value="todo">未着手</option>
+              <option value="doing">作業中</option>
+              <option value="done">完了</option>
+            </select>
+            <p id="status-error" class="field-error" role="alert" hidden>正しいステータスを選択してください。</p>
+          </div>
+        </div>
+
+        <footer class="dialog-actions">
+          <button id="cancel-dialog-button" class="button button-secondary" type="button">キャンセル</button>
+          <button class="button button-primary" type="submit">保存</button>
+        </footer>
+      </form>
+    </dialog>
+  </body>
+</html>
