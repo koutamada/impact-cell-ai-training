@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSVデータをブラウザ内で集計し、グラフ化するツール">
+    <title>データ分析・グラフ化ツール</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
+    <script src="vendor/chart.umd.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div>
+          <p class="eyebrow">INTERMEDIATE / PART 2</p>
+          <h1>データ分析・グラフ化ツール</h1>
+          <p class="header-description">CSVを端末内で読み込み、絞り込み・集計・グラフ作成まで行えます。</p>
+        </div>
+        <span class="privacy-badge">外部送信なし</span>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <div id="notification" class="notification notification-info" role="status" aria-live="polite" aria-atomic="true">
+        <span id="notification-icon" class="notification-icon" aria-hidden="true">i</span>
+        <span id="notification-text">UTF-8のCSVファイルを選択してください。</span>
+      </div>
+
+      <section class="panel data-bar" aria-labelledby="upload-heading">
+        <div class="data-bar-layout">
+          <div>
+            <p class="section-step">STEP 1</p>
+            <h2 id="upload-heading">データ</h2>
+          </div>
+          <div id="upload-zone" class="upload-zone" aria-busy="false">
+            <label class="file-label" for="csv-file">CSVファイル</label>
+            <input id="csv-file" class="file-input" type="file" accept=".csv,text/csv" aria-describedby="file-help">
+            <p id="file-help" class="help-text">UTF-8 / 最大5 MiB / データ10,000行 / 100列まで</p>
+            <p id="loading-text" class="loading-text" hidden><span class="spinner" aria-hidden="true"></span>読み込み中です…</p>
+          </div>
+          <a class="secondary-button download-link" href="sample-data.csv" download="sample-data.csv">サンプルCSVを取得</a>
+          <dl class="data-summary" aria-label="読み込み情報">
+            <div class="data-stat data-stat-file">
+              <dt>ファイル名</dt>
+              <dd><strong id="file-name">未読込</strong></dd>
+            </div>
+            <div class="data-stat">
+              <dt>総行数</dt>
+              <dd><strong id="total-rows">—</strong><span>行</span></dd>
+            </div>
+            <div class="data-stat data-stat-accent">
+              <dt>絞り込み後</dt>
+              <dd><strong id="filtered-rows">—</strong><span>行</span></dd>
+            </div>
+            <div class="data-stat">
+              <dt>列数</dt>
+              <dd><strong id="column-count">—</strong><span>列</span></dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <div class="analysis-grid">
+        <section class="panel settings-panel" aria-labelledby="settings-heading">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="section-step">STEP 2</p>
+              <h2 id="settings-heading">分析条件</h2>
+            </div>
+          </div>
+
+          <fieldset id="settings-fieldset" class="settings-fieldset" disabled>
+            <legend class="visually-hidden">絞り込みとグラフの設定</legend>
+
+            <div class="form-section">
+              <h3>絞り込み</h3>
+              <div class="form-group">
+                <label for="filter-column">絞り込み列</label>
+                <select id="filter-column">
+                  <option value="">絞り込みなし</option>
+                </select>
+                <p id="filter-column-help" class="field-help">文字列列を1つ選択できます。</p>
+              </div>
+              <div class="form-group">
+                <label for="filter-value">絞り込み値</label>
+                <select id="filter-value" disabled>
+                  <option value="__ALL__">すべて</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>グラフ設定</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="chart-type">グラフ種類</label>
+                  <select id="chart-type">
+                    <option value="bar">棒グラフ</option>
+                    <option value="line">折れ線グラフ</option>
+                    <option value="pie">円グラフ</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="aggregation">集計方法</label>
+                  <select id="aggregation">
+                    <option value="sum">合計</option>
+                    <option value="average">平均</option>
+                    <option value="count">件数</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="x-column">X軸／カテゴリ項目</label>
+                <select id="x-column" aria-describedby="x-column-error"></select>
+                <p id="x-column-error" class="field-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label for="y-column">Y軸／数値項目</label>
+                <select id="y-column" aria-describedby="y-column-help y-column-error"></select>
+                <p id="y-column-help" class="field-help">数値として判定された列だけを選択できます。</p>
+                <p id="y-column-error" class="field-error" hidden></p>
+              </div>
+              <div class="form-group">
+                <label for="chart-title">グラフタイトル</label>
+                <input id="chart-title" type="text" maxlength="200" placeholder="例：カテゴリ別売上">
+              </div>
+              <label class="checkbox-row" for="show-legend">
+                <input id="show-legend" type="checkbox" checked>
+                <span>凡例を表示する</span>
+              </label>
+            </div>
+          </fieldset>
+        </section>
+
+        <div class="right-column">
+          <section class="panel chart-panel" aria-labelledby="chart-heading">
+            <div class="section-heading compact-heading chart-heading-row">
+              <div>
+                <p class="section-step">STEP 3</p>
+                <h2 id="chart-heading">グラフ</h2>
+              </div>
+              <div class="chart-actions">
+                <button id="create-chart" class="primary-button" type="button" disabled>グラフを更新</button>
+                <button id="save-png" class="secondary-button" type="button" disabled aria-describedby="chart-message">PNGを保存</button>
+              </div>
+            </div>
+            <div id="chart-wrap" class="chart-wrap">
+              <p id="chart-message" class="empty-message">CSVを読み込むと、初期グラフを自動表示します。</p>
+              <canvas id="chart-canvas" role="img" aria-label="グラフはまだ作成されていません" hidden></canvas>
+            </div>
+          </section>
+
+          <section class="panel result-panel" aria-labelledby="result-heading">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="section-step">RESULT</p>
+                <h2 id="result-heading">集計結果</h2>
+              </div>
+            </div>
+            <p id="result-summary" class="result-summary">CSVを読み込むと、グラフと同じ集計結果を表で確認できます。</p>
+            <div id="result-table-wrap" class="table-wrap result-table-wrap" tabindex="0" aria-label="集計結果表" hidden></div>
+          </section>
+        </div>
+      </div>
+
+      <section class="panel preview-panel" aria-labelledby="preview-heading">
+        <div class="section-heading compact-heading preview-heading-row">
+          <div>
+            <p class="section-step">DATA</p>
+            <h2 id="preview-heading">元データプレビュー</h2>
+          </div>
+          <div class="preview-actions">
+            <p id="preview-limit" class="preview-limit">未読込</p>
+            <button id="preview-toggle" class="secondary-button preview-toggle" type="button" aria-expanded="false" aria-controls="preview-content" disabled>表示する</button>
+          </div>
+        </div>
+        <div id="preview-content" hidden>
+          <p id="preview-message" class="empty-message preview-empty">CSVを読み込むと先頭100件まで表示します。</p>
+          <div id="preview-table-wrap" class="table-wrap preview-table-wrap" tabindex="0" aria-label="元データプレビュー表" hidden></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>Chart.js 4.5.1 / <a href="vendor/LICENSE.md" target="_blank" rel="noopener">ライセンスを確認</a></p>
+      <p>データはこのブラウザ内だけで処理され、保存・外部送信されません。</p>
+    </footer>
+  </body>
+</html>
