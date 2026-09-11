@@ -1,0 +1,3 @@
+window.APP_CONFIG = {
+  GEOAPIFY_API_KEY: "a8dc78cd8da243bfa2496c76ad141b50"
+};

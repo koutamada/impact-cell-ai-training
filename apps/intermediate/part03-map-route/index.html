@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="住所・施設検索と現在地から、徒歩・車のルートを確認できる地図アプリ">
+    <title>地図検索・ルート表示アプリ</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="vendor/leaflet/leaflet.js" defer></script>
+    <script src="config.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-top-row">
+          <p class="eyebrow">INTERMEDIATE / PART 3</p>
+          <div class="header-badges" aria-label="データ利用について">
+            <span>Geoapifyを使用</span>
+            <span>位置情報は操作時のみ</span>
+          </div>
+        </div>
+        <div class="header-main-row">
+          <h1>地図検索・ルート表示アプリ</h1>
+          <p class="header-description">住所や施設を選び、現在地からの直線距離と徒歩・車のルートを確認できます。</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <div class="workspace-grid">
+        <section class="panel control-panel" aria-labelledby="control-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-step">STEP 1</p>
+              <h2 id="control-heading">地点と移動手段</h2>
+            </div>
+          </div>
+
+          <div class="location-grid">
+            <section id="origin-section" class="location-card location-origin" aria-labelledby="origin-heading" aria-busy="false">
+            <div class="location-heading">
+              <span class="location-symbol" aria-hidden="true">A</span>
+              <div class="location-heading-copy">
+                <h3 id="origin-heading">出発地</h3>
+                <p>住所または施設名から選択</p>
+              </div>
+            </div>
+            <form id="origin-form" class="search-form" novalidate>
+              <label class="visually-hidden" for="origin-query">出発地Aを検索</label>
+              <div class="search-row">
+                <input id="origin-query" name="origin-query" type="search" maxlength="201" autocomplete="off" placeholder="住所または施設名を入力" aria-describedby="origin-error">
+                <button id="origin-search" class="primary-button" type="submit" aria-label="出発地Aを検索">検索</button>
+              </div>
+              <p id="origin-error" class="field-error" hidden></p>
+            </form>
+            <button id="use-current-location" class="location-button" type="button">
+              <span aria-hidden="true">◎</span>
+              現在地を出発地に設定
+            </button>
+            <p id="geolocation-status" class="field-status" aria-live="polite"></p>
+            <div class="confirmed-location">
+              <span>確定済み</span>
+              <strong id="origin-confirmed">未設定</strong>
+            </div>
+            <div id="origin-candidates" class="candidate-area" aria-label="出発地Aの検索候補" hidden>
+              <p id="origin-candidate-status" class="candidate-status"></p>
+              <ul id="origin-candidate-list" class="candidate-list"></ul>
+            </div>
+            </section>
+
+            <div class="swap-points-row">
+              <button id="swap-points" class="secondary-button swap-button" type="button" aria-label="出発地Aと目的地Bを入れ替える" title="出発地Aと目的地Bを入れ替える" disabled><span aria-hidden="true">⇅</span></button>
+            </div>
+
+            <section id="destination-section" class="location-card location-destination" aria-labelledby="destination-heading" aria-busy="false">
+            <div class="location-heading">
+              <span class="location-symbol" aria-hidden="true">B</span>
+              <div class="location-heading-copy">
+                <h3 id="destination-heading">目的地</h3>
+                <p>住所または施設名から選択</p>
+              </div>
+            </div>
+            <form id="destination-form" class="search-form" novalidate>
+              <label class="visually-hidden" for="destination-query">目的地Bを検索</label>
+              <div class="search-row">
+                <input id="destination-query" name="destination-query" type="search" maxlength="201" autocomplete="off" placeholder="住所または施設名を入力" aria-describedby="destination-error">
+                <button id="destination-search" class="primary-button" type="submit" aria-label="目的地Bを検索">検索</button>
+              </div>
+              <p id="destination-error" class="field-error" hidden></p>
+            </form>
+            <div class="confirmed-location">
+              <span>確定済み</span>
+              <strong id="destination-confirmed">未設定</strong>
+            </div>
+            <div id="destination-candidates" class="candidate-area" aria-label="目的地Bの検索候補" hidden>
+              <p id="destination-candidate-status" class="candidate-status"></p>
+              <ul id="destination-candidate-list" class="candidate-list"></ul>
+            </div>
+            </section>
+          </div>
+
+          <section id="route-controls" class="route-controls" aria-labelledby="route-controls-heading" aria-busy="false">
+            <h3 id="route-controls-heading">移動手段とルート</h3>
+            <fieldset class="travel-mode">
+              <legend class="visually-hidden">移動手段</legend>
+              <label><input type="radio" name="travel-mode" value="walk" checked> 徒歩</label>
+              <label><input type="radio" name="travel-mode" value="drive"> 車</label>
+            </fieldset>
+            <button id="search-route" class="primary-button route-button full-button" type="button" aria-describedby="route-action-reason" disabled>ルートを検索</button>
+            <p id="route-action-reason" class="action-reason">出発地Aと目的地Bを設定してください。</p>
+            <p id="route-error" class="field-error" hidden></p>
+            <div class="clear-actions">
+              <button id="clear-route" class="secondary-button" type="button" disabled>経路をクリア</button>
+              <button id="clear-all" class="text-button" type="button">地点をすべてクリア</button>
+            </div>
+          </section>
+        </section>
+
+        <div class="map-column">
+          <section class="panel map-panel" aria-labelledby="map-heading">
+            <div class="section-heading map-heading-row">
+              <div>
+                <p class="section-step">STEP 2</p>
+                <h2 id="map-heading">地図</h2>
+              </div>
+              <div id="notification" class="notification notification-info" role="status" aria-live="polite" aria-atomic="true">
+                <span id="notification-icon" class="notification-icon" aria-hidden="true">i</span>
+                <span id="notification-text">出発地と目的地を設定してください。</span>
+              </div>
+              <div class="marker-legend" aria-label="マーカーの凡例">
+                <span><b class="legend-a">A</b>出発地</span>
+                <span><b class="legend-b">B</b>目的地</span>
+                <span><b class="legend-current">◎</b>現在地</span>
+              </div>
+            </div>
+            <div class="map-wrap">
+              <div id="map" aria-label="札幌市中心部を初期表示する地図。矢印キーで移動し、プラスキーとマイナスキーで拡大縮小できます"></div>
+              <p id="map-fallback" class="map-fallback" hidden></p>
+            </div>
+          </section>
+
+          <section class="results-grid" aria-label="距離とルートの結果">
+            <article class="panel result-card straight-card">
+              <p class="section-step">STRAIGHT LINE</p>
+              <h2>現在地から目的地B</h2>
+              <p id="straight-distance" class="result-value">未計算</p>
+              <p id="straight-description" class="result-note">現在地と目的地Bが揃うと、直線距離の概算を表示します。</p>
+            </article>
+            <article class="panel result-card route-card">
+              <p class="section-step">ROUTE BY GEOAPIFY</p>
+              <h2>出発地Aから目的地B</h2>
+              <dl class="route-summary">
+                <div><dt>経路距離</dt><dd id="route-distance">未計算</dd></div>
+                <div><dt>推定所要時間</dt><dd id="route-duration">未計算</dd></div>
+                <div><dt>移動手段</dt><dd id="route-mode">徒歩</dd></div>
+              </dl>
+            </article>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>Leaflet 1.9.4 / <a href="vendor/leaflet/LICENSE" target="_blank" rel="noopener">ライセンスを確認</a></p>
+      <p>地図タイル・地点検索・経路検索にGeoapifyを使用します。地点検索では検索語と近隣候補を優先するための確定地点または地図中心座標を送信し、現在地を基準にする場合は現在地座標も送信します。ルート検索ではA・B座標を送信します。</p>
+      <p>位置情報は利用者が明示的に取得した場合だけ使用し、座標や検索履歴をStorageへ保存しません。</p>
+      <p>GitHub PagesではAPIキーを完全には秘匿できません。公開用の利用元制限付きブラウザキーだけを使用してください。</p>
+    </footer>
+  </body>
+</html>
