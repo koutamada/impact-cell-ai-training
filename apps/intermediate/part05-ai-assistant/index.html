@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="保存した会話を再開できる、認証付きAI会話アシスタントです。">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>AI会話アシスタント | Intermediate Part 5</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js" defer></script>
+    <script src="vendor/supabase-js/supabase.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div>
+          <p class="eyebrow">INTERMEDIATE / PART 5</p>
+          <h1>AI会話アシスタント</h1>
+        </div>
+        <p class="header-description">過去の会話を引き継ぎながら、AIと安全に対話できます。</p>
+        <div class="header-badges" aria-label="アプリの特徴">
+          <span>ログイン必須</span>
+          <span>履歴を保存</span>
+          <span>APIキー非公開</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="app-main" class="app-main">
+      <div id="global-notice" class="notice notice-info" role="status" aria-live="polite" aria-atomic="true" hidden>
+        <span id="global-notice-icon" class="notice-icon" aria-hidden="true">i</span>
+        <span id="global-notice-text"></span>
+      </div>
+
+      <section id="loading-view" class="center-card" aria-labelledby="loading-title">
+        <p class="eyebrow">INITIALIZING</p>
+        <h2 id="loading-title">起動しています</h2>
+        <p>認証状態を確認しています。</p>
+      </section>
+
+      <section id="config-view" class="center-card" aria-labelledby="config-title" hidden>
+        <p class="eyebrow">SETUP REQUIRED</p>
+        <h2 id="config-title">Supabaseの設定が必要です</h2>
+        <p><code>config.example.js</code>を参考に、公開可能なProject URLとpublishable keyを<code>config.js</code>へ設定してください。</p>
+        <p class="subtle">OpenAI APIキーはブラウザへ設定しません。</p>
+      </section>
+
+      <section id="auth-view" class="auth-card" aria-labelledby="auth-title" hidden>
+        <div class="auth-heading">
+          <p class="eyebrow">ACCOUNT</p>
+          <h2 id="auth-title">ログイン</h2>
+          <p id="auth-description">保存済みの会話を開くにはログインしてください。</p>
+        </div>
+        <div class="tab-list" role="tablist" aria-label="認証方法">
+          <button id="login-tab" class="tab-button is-active" type="button" role="tab" aria-selected="true" aria-controls="auth-form">ログイン</button>
+          <button id="signup-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="auth-form">アカウント作成</button>
+        </div>
+        <form id="auth-form" novalidate>
+          <div class="field">
+            <label for="auth-email">メールアドレス</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required aria-describedby="auth-error">
+          </div>
+          <div class="field">
+            <label for="auth-password">パスワード</label>
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" required aria-describedby="auth-password-hint auth-error">
+            <p id="auth-password-hint" class="subtle">登録済みのパスワードを入力してください。</p>
+          </div>
+          <p id="auth-error" class="field-error" role="alert" hidden></p>
+          <button id="auth-submit" class="button button-primary button-wide" type="submit">ログイン</button>
+          <button id="forgot-password-button" class="text-button" type="button">パスワードを再設定</button>
+        </form>
+      </section>
+
+      <section id="confirmation-view" class="center-card" aria-labelledby="confirmation-title" hidden>
+        <p class="eyebrow">CHECK YOUR EMAIL</p>
+        <h2 id="confirmation-title">メール確認をお待ちしています</h2>
+        <p>確認メールのリンクを開いた後、この画面へ戻ってログインしてください。</p>
+        <button id="confirmation-back" class="button button-secondary" type="button">ログインへ戻る</button>
+      </section>
+
+      <section id="reset-request-view" class="auth-card" aria-labelledby="reset-request-title" hidden>
+        <div class="auth-heading">
+          <p class="eyebrow">RESET PASSWORD</p>
+          <h2 id="reset-request-title">パスワードを再設定</h2>
+          <p>再設定リンクを受け取るメールアドレスを入力してください。</p>
+        </div>
+        <form id="reset-request-form" novalidate>
+          <div class="field">
+            <label for="reset-email">メールアドレス</label>
+            <input id="reset-email" name="email" type="email" autocomplete="email" required aria-describedby="reset-request-error">
+          </div>
+          <p id="reset-request-error" class="field-error" role="alert" hidden></p>
+          <button id="reset-request-submit" class="button button-primary button-wide" type="submit">再設定メールを送信</button>
+          <button id="reset-request-back" class="text-button" type="button">ログインへ戻る</button>
+        </form>
+      </section>
+
+      <section id="recovery-view" class="auth-card" aria-labelledby="recovery-title" hidden>
+        <div class="auth-heading">
+          <p class="eyebrow">NEW PASSWORD</p>
+          <h2 id="recovery-title">新しいパスワードを設定</h2>
+        </div>
+        <form id="recovery-form" novalidate>
+          <div class="field">
+            <label for="new-password">新しいパスワード</label>
+            <input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="6" required aria-describedby="recovery-error">
+          </div>
+          <div class="field">
+            <label for="confirm-password">新しいパスワード（確認）</label>
+            <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required aria-describedby="recovery-error">
+          </div>
+          <p id="recovery-error" class="field-error" role="alert" hidden></p>
+          <button id="recovery-submit" class="button button-primary button-wide" type="submit">パスワードを変更</button>
+        </form>
+      </section>
+
+      <section id="chat-view" class="chat-shell" aria-label="AI会話アシスタント" hidden>
+        <aside class="conversation-panel" aria-labelledby="conversation-list-title">
+          <div class="conversation-panel-header">
+            <div>
+              <p class="eyebrow">HISTORY</p>
+              <h2 id="conversation-list-title">会話履歴</h2>
+            </div>
+            <button id="new-conversation-button" class="button button-primary" type="button">＋ 新しい会話</button>
+          </div>
+          <button id="conversation-toggle" class="button button-secondary conversation-toggle" type="button" aria-expanded="false" aria-controls="conversation-drawer">会話一覧を表示</button>
+          <div id="conversation-drawer" class="conversation-drawer">
+            <div id="conversation-status" class="inline-status" role="status" aria-live="polite" hidden></div>
+            <nav id="conversation-list" class="conversation-list" aria-label="保存済み会話"></nav>
+            <button id="load-more-conversations" class="button button-secondary button-wide" type="button" hidden>過去の会話を読み込む</button>
+          </div>
+        </aside>
+
+        <section class="assistant-panel" aria-labelledby="current-conversation-title">
+          <header class="assistant-toolbar">
+            <div class="conversation-title-wrap">
+              <p class="eyebrow">AI ASSISTANT</p>
+              <h2 id="current-conversation-title">新しい会話</h2>
+            </div>
+            <div class="account-actions">
+              <span id="signed-in-user" class="signed-in-user"></span>
+              <button id="delete-conversation-button" class="button button-danger" type="button" disabled>会話を削除</button>
+              <button id="logout-button" class="button button-secondary" type="button">ログアウト</button>
+            </div>
+          </header>
+
+          <div class="message-stage">
+            <div id="history-control" class="history-control">
+              <button id="load-older-messages" class="history-button" type="button" hidden>↑ 過去を読む</button>
+              <span id="history-status" class="inline-status" role="status" aria-live="polite" hidden></span>
+            </div>
+            <div id="message-list" class="message-list" tabindex="0" aria-label="会話メッセージ"></div>
+            <div id="empty-conversation" class="empty-state">
+              <span class="empty-icon" aria-hidden="true">✦</span>
+              <h3>AIに質問してみましょう</h3>
+              <p>最初の質問が会話タイトルになります。回答には誤りが含まれる場合があります。</p>
+            </div>
+          </div>
+
+          <div id="send-status" class="send-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+          <form id="message-form" class="composer" novalidate>
+            <label for="message-input">メッセージ</label>
+            <div class="composer-input-wrap">
+              <textarea id="message-input" name="message" rows="3" placeholder="AIへの質問を入力" aria-describedby="message-help message-error" required></textarea>
+              <span id="message-count" class="character-count" aria-live="off">0 / 2000</span>
+            </div>
+            <div class="composer-footer">
+              <p id="message-help">Enterで送信、Shift+Enterで改行</p>
+              <button id="send-button" class="button button-primary" type="submit" disabled>送信</button>
+            </div>
+            <p id="message-error" class="field-error" role="alert" hidden></p>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>会話は本人だけが閲覧できます。入力内容と直近最大20件の履歴は、回答生成のためOpenAIへ送信されます。</p>
+      <p>Supabase Auth / Database / Edge Functions ・ OpenAI Responses API（gpt-5.6-luna）</p>
+    </footer>
+
+    <dialog id="delete-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
+      <form method="dialog" class="dialog-card">
+        <h2 id="delete-dialog-title">会話を削除しますか？</h2>
+        <p id="delete-dialog-description">会話とすべてのメッセージは元に戻せません。</p>
+        <div class="dialog-actions">
+          <button id="delete-cancel" class="button button-secondary" value="cancel">キャンセル</button>
+          <button id="delete-confirm" class="button button-danger" value="confirm">削除する</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
