@@ -81,6 +81,18 @@ h3 { margin: 0; color: var(--navy); }
 
 .app-main { width: min(1380px, 100%); min-width: 0; max-width: 100%; margin: 0 auto; padding: 18px 28px; }
 .notice { max-width: 980px; margin: 0 auto 12px; padding: 9px 12px; display: flex; gap: 9px; border: 1px solid #bed0dd; border-radius: 10px; background: #edf6fb; }
+.notice.is-exiting {
+  height: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  opacity: 0;
+  transition: opacity 230ms ease, height 230ms ease, margin-bottom 230ms ease,
+    padding-top 230ms ease, padding-bottom 230ms ease, border-width 230ms ease;
+}
 .notice-error { border-color: #e1b3b3; background: var(--danger-soft); color: #762222; }
 .notice-success { border-color: #acd7c5; background: var(--success-soft); color: #15523d; }
 .notice-warning { border-color: #e7cf9b; background: var(--warning-soft); color: #72480b; }

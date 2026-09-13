@@ -44,6 +44,7 @@
     deleteConversationId: null,
     deleteReturnFocus: null,
     noticeTimer: null,
+    noticeExitTimer: null,
     noticeType: null
   };
 
@@ -432,12 +433,23 @@
     if (!state.user || state.sending) return;
     const authGeneration = state.authGeneration;
     const userId = state.user.id;
+    const previousState = snapshotConversationView();
+    clearConversationForCreation();
     setBusy(elements["new-conversation-button"], true, "作成中…");
-    const { data, error } = await state.client.from("ai_conversations")
-      .insert({ user_id: userId }).select("id,title,generation_status,created_at,updated_at").single();
+    let data = null;
+    let error = null;
+    try {
+      const result = await state.client.from("ai_conversations")
+        .insert({ user_id: userId }).select("id,title,generation_status,created_at,updated_at").single();
+      data = result.data;
+      error = result.error;
+    } catch {
+      error = new Error("conversation_creation_failed");
+    }
     if (authGeneration !== state.authGeneration || userId !== state.user?.id) return;
     setBusy(elements["new-conversation-button"], false, "＋ 新しい会話");
     if (error || !validConversation(data)) {
+      restoreConversationView(previousState);
       showNotice("新しい会話を作成できませんでした。", "error");
       return;
     }
@@ -459,8 +471,12 @@
     elements["message-input"].value = "";
     elements["send-status"].textContent = "";
     elements["send-status"].hidden = true;
+    elements["history-status"].textContent = "";
+    elements["history-status"].hidden = true;
     clearFieldError("message-error", "message-input");
     renderConversations();
+    renderMessages(false);
+    elements["message-list"].scrollTop = 0;
     renderCurrentConversation();
     closeConversationDrawerOnNarrowScreen();
     if (knownEmpty) return;
@@ -486,6 +502,58 @@
     }
     renderMessages(true);
     renderCurrentConversation();
+  }
+
+  function snapshotConversationView() {
+    return {
+      selectedConversationId: state.selectedConversationId,
+      messages: state.messages,
+      messageCursor: state.messageCursor,
+      hasOlderMessages: state.hasOlderMessages,
+      activeRequest: state.activeRequest,
+      input: elements["message-input"].value,
+      sendStatus: elements["send-status"].textContent,
+      sendStatusHidden: elements["send-status"].hidden,
+      historyStatus: elements["history-status"].textContent,
+      historyStatusHidden: elements["history-status"].hidden,
+      scrollTop: elements["message-list"].scrollTop
+    };
+  }
+
+  function clearConversationForCreation() {
+    ++state.conversationGeneration;
+    state.selectedConversationId = null;
+    state.messages = [];
+    state.messageCursor = null;
+    state.hasOlderMessages = false;
+    state.activeRequest = null;
+    elements["message-input"].value = "";
+    elements["send-status"].textContent = "";
+    elements["send-status"].hidden = true;
+    elements["history-status"].textContent = "";
+    elements["history-status"].hidden = true;
+    clearFieldError("message-error", "message-input");
+    renderConversations();
+    renderMessages(false);
+    elements["message-list"].scrollTop = 0;
+    renderCurrentConversation();
+  }
+
+  function restoreConversationView(previous) {
+    state.selectedConversationId = previous.selectedConversationId;
+    state.messages = previous.messages;
+    state.messageCursor = previous.messageCursor;
+    state.hasOlderMessages = previous.hasOlderMessages;
+    state.activeRequest = previous.activeRequest;
+    elements["message-input"].value = previous.input;
+    elements["send-status"].textContent = previous.sendStatus;
+    elements["send-status"].hidden = previous.sendStatusHidden;
+    elements["history-status"].textContent = previous.historyStatus;
+    elements["history-status"].hidden = previous.historyStatusHidden;
+    renderConversations();
+    renderMessages(false);
+    renderCurrentConversation();
+    elements["message-list"].scrollTop = previous.scrollTop;
   }
 
   async function queryMessages(conversationId, cursor) {
@@ -824,10 +892,8 @@
   }
 
   function showNotice(message, type = "info") {
-    if (state.noticeTimer !== null) {
-      window.clearTimeout(state.noticeTimer);
-      state.noticeTimer = null;
-    }
+    cancelNoticeTimers();
+    resetNoticeExitStyles();
     state.noticeType = type;
     elements["global-notice"].hidden = false;
     elements["global-notice"].className = `notice notice-${type}`;
@@ -837,7 +903,7 @@
     if (type === "success") {
       state.noticeTimer = window.setTimeout(() => {
         state.noticeTimer = null;
-        if (state.noticeType === "success") clearNotice();
+        if (state.noticeType === "success") beginNoticeExit();
       }, 4000);
     }
   }
@@ -847,12 +913,44 @@
   }
 
   function clearNotice() {
-    if (state.noticeTimer !== null) window.clearTimeout(state.noticeTimer);
-    state.noticeTimer = null;
+    cancelNoticeTimers();
     state.noticeType = null;
-    elements["global-notice"].hidden = true;
+    resetNoticeExitStyles();
+    const notice = elements["global-notice"];
+    notice.hidden = true;
     elements["global-notice-icon"].textContent = "";
     elements["global-notice-text"].textContent = "";
+  }
+
+  function beginNoticeExit() {
+    if (state.noticeType !== "success") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      clearNotice();
+      return;
+    }
+    const notice = elements["global-notice"];
+    notice.style.height = `${notice.offsetHeight}px`;
+    notice.style.marginBottom = window.getComputedStyle(notice).marginBottom;
+    void notice.offsetHeight;
+    notice.classList.add("is-exiting");
+    state.noticeExitTimer = window.setTimeout(() => {
+      state.noticeExitTimer = null;
+      if (state.noticeType === "success") clearNotice();
+    }, 230);
+  }
+
+  function cancelNoticeTimers() {
+    if (state.noticeTimer !== null) window.clearTimeout(state.noticeTimer);
+    if (state.noticeExitTimer !== null) window.clearTimeout(state.noticeExitTimer);
+    state.noticeTimer = null;
+    state.noticeExitTimer = null;
+  }
+
+  function resetNoticeExitStyles() {
+    const notice = elements["global-notice"];
+    notice.classList.remove("is-exiting");
+    notice.style.height = "";
+    notice.style.marginBottom = "";
   }
 
   function invalidateAsyncWork() {
