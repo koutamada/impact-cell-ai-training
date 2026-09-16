@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="文書と根拠を確認しながら要約を保存・出力できる認証付きAI文書要約ツールです。">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>AI文書要約ツール | Intermediate Part 6</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js" defer></script>
+    <script src="vendor/supabase-js/supabase.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">INTERMEDIATE / PART 6</p>
+        <h1>AI文書要約ツール</h1>
+        <p class="header-description">要約の粒度を選び、原文との対応を確認できます。</p>
+      </div>
+      <div id="account-actions" class="account-actions" hidden>
+        <span id="signed-in-user"></span>
+        <button id="logout-button" class="button button-secondary" type="button">ログアウト</button>
+      </div>
+    </header>
+
+    <main id="app-main" class="app-main">
+      <div id="global-notice" class="notice" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+      <section id="loading-view" class="center-card" aria-labelledby="loading-title">
+        <p class="eyebrow">INITIALIZING</p>
+        <h2 id="loading-title">認証状態を確認しています</h2>
+      </section>
+
+      <section id="config-view" class="center-card" aria-labelledby="config-title" hidden>
+        <p class="eyebrow">CONFIGURATION</p>
+        <h2 id="config-title">Supabase設定が必要です</h2>
+        <p><code>config.example.js</code>を参考に、公開可能なProject URLとpublishable keyだけを設定してください。</p>
+      </section>
+
+      <section id="auth-view" class="auth-card" aria-labelledby="auth-title" hidden>
+        <div class="tab-list" role="tablist" aria-label="認証方法">
+          <button id="login-tab" class="tab is-active" type="button" role="tab" aria-selected="true">ログイン</button>
+          <button id="signup-tab" class="tab" type="button" role="tab" aria-selected="false">アカウント作成</button>
+        </div>
+        <h2 id="auth-title">ログイン</h2>
+        <p id="auth-description">保存済みの要約を開くにはログインしてください。</p>
+        <form id="auth-form" novalidate>
+          <label for="auth-email">メールアドレス</label>
+          <input id="auth-email" type="email" autocomplete="email" required aria-describedby="auth-error">
+          <label for="auth-password">パスワード</label>
+          <input id="auth-password" type="password" autocomplete="current-password" required aria-describedby="auth-password-hint auth-error">
+          <p id="auth-password-hint" class="help">登録済みのパスワードを入力してください。</p>
+          <p id="auth-error" class="field-error" role="alert" hidden></p>
+          <button id="auth-submit" class="button button-primary button-wide" type="submit">ログイン</button>
+          <button id="forgot-password-button" class="text-button" type="button">パスワードを再設定</button>
+        </form>
+      </section>
+
+      <section id="confirmation-view" class="center-card" aria-labelledby="confirmation-title" hidden>
+        <h2 id="confirmation-title">確認メールを送信しました</h2>
+        <p>メール内のリンクを確認後、ログインしてください。</p>
+        <button id="confirmation-back" class="button button-secondary" type="button">ログインへ戻る</button>
+      </section>
+
+      <section id="reset-request-view" class="auth-card" aria-labelledby="reset-title" hidden>
+        <h2 id="reset-title">パスワード再設定</h2>
+        <form id="reset-request-form" novalidate>
+          <label for="reset-email">メールアドレス</label>
+          <input id="reset-email" type="email" autocomplete="email" required aria-describedby="reset-error">
+          <p id="reset-error" class="field-error" role="alert" hidden></p>
+          <button class="button button-primary button-wide" type="submit">再設定メールを送信</button>
+          <button id="reset-back" class="text-button" type="button">ログインへ戻る</button>
+        </form>
+      </section>
+
+      <section id="recovery-view" class="auth-card" aria-labelledby="recovery-title" hidden>
+        <h2 id="recovery-title">新しいパスワード</h2>
+        <form id="recovery-form" novalidate>
+          <label for="new-password">新しいパスワード</label>
+          <input id="new-password" type="password" autocomplete="new-password" minlength="6" required aria-describedby="recovery-error">
+          <label for="confirm-password">新しいパスワード（確認）</label>
+          <input id="confirm-password" type="password" autocomplete="new-password" minlength="6" required aria-describedby="recovery-error">
+          <p id="recovery-error" class="field-error" role="alert" hidden></p>
+          <button class="button button-primary button-wide" type="submit">パスワードを変更</button>
+        </form>
+      </section>
+
+      <section id="workspace-view" class="workspace" hidden>
+        <aside class="history-panel" aria-labelledby="history-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">HISTORY</p><h2 id="history-title">保存履歴</h2></div>
+            <button id="new-summary-button" class="button button-secondary" type="button">新しい要約</button>
+          </div>
+          <button id="history-toggle" class="button button-secondary button-wide history-toggle" type="button" aria-expanded="false" aria-controls="history-drawer">履歴を表示</button>
+          <div id="history-drawer" class="history-drawer">
+            <p id="history-status" class="inline-status" role="status" aria-live="polite" hidden></p>
+            <nav id="history-list" class="history-list" aria-label="保存済み要約"></nav>
+            <button id="load-more-history" class="button button-secondary button-wide" type="button" hidden>過去の履歴を読み込む</button>
+          </div>
+        </aside>
+
+        <div class="main-panel">
+          <section id="input-section" class="panel" aria-labelledby="input-title">
+            <div class="panel-heading input-heading">
+              <div><p class="eyebrow">DOCUMENT</p><h2 id="input-title">文書を入力</h2></div>
+              <div class="mode-tabs" role="radiogroup" aria-label="入力方法">
+                <button id="direct-mode-button" class="mode-button is-active" type="button" role="radio" aria-checked="true">テキスト入力</button>
+                <button id="file-mode-button" class="mode-button" type="button" role="radio" aria-checked="false">ファイル</button>
+              </div>
+            </div>
+            <div id="direct-input-panel">
+              <label for="direct-input">要約する文章</label>
+              <textarea id="direct-input" rows="10" placeholder="ここに文章を入力してください" aria-describedby="direct-count input-error"></textarea>
+              <p id="direct-count" class="count">0 / 100,000</p>
+            </div>
+            <div id="file-input-panel" hidden>
+              <label for="file-input">文書ファイル</label>
+              <input id="file-input" type="file" accept=".txt,.md,.markdown,.pdf,.doc,.docx,.ppt,.pptx" aria-describedby="file-help input-error">
+              <div id="file-summary" class="file-summary" hidden></div>
+              <button id="clear-file-button" class="text-button" type="button" hidden>選択を解除</button>
+              <p id="file-help" class="help">TXT/MarkdownはUTF-8、最大1MiB。PDF/Word/PowerPointは最大6MiBです。</p>
+            </div>
+            <div class="caution-box">
+              <p>Word・PowerPointは主にテキストを読み取るため、画像やグラフが十分に反映されない場合があります。図表も含めて要約する場合はPDFを推奨します。PDFはAIの標準処理を使用し、アプリ独自のOCRは行いません。</p>
+            </div>
+
+            <div class="settings-grid">
+              <fieldset>
+                <legend>要約範囲</legend>
+                <label><input type="radio" name="coverage" value="key_points" checked> 重要点のみ</label>
+                <label><input type="radio" name="coverage" value="comprehensive"> 全体を網羅</label>
+              </fieldset>
+              <fieldset>
+                <legend>説明の詳しさ</legend>
+                <label><input type="radio" name="detail" value="brief"> 短く</label>
+                <label><input type="radio" name="detail" value="standard" checked> 標準</label>
+                <label><input type="radio" name="detail" value="detailed"> 詳しく</label>
+              </fieldset>
+            </div>
+            <p class="privacy-note">文書は要約生成のためOpenAIへ送信されます（store:false）。Supabaseには要約と根拠情報だけを保存し、原文全文やファイルは保存しません。</p>
+            <p id="input-error" class="field-error" role="alert" hidden></p>
+            <div id="generation-status" class="generation-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+            <button id="generate-button" class="button button-primary button-wide" type="button">要約を生成</button>
+          </section>
+
+          <section id="result-section" class="panel result-panel" aria-labelledby="result-title" hidden>
+            <div class="result-toolbar">
+              <div>
+                <p class="eyebrow">SUMMARY</p>
+                <h2 id="result-title">要約結果</h2>
+                <p id="result-meta" class="result-meta"></p>
+                <p id="history-source-note" class="history-source-note" hidden>原文は保存されていないため、履歴では根拠番号のみ確認できます。</p>
+              </div>
+              <span id="save-badge" class="save-badge"></span>
+            </div>
+            <div id="unsaved-warning" class="caution-box" role="alert" hidden>
+              <p>この結果は未保存です。再読み込み、ログアウト、別入力の開始で失われます。</p>
+              <button id="retry-save-button" class="button button-primary" type="button">保存だけ再試行</button>
+            </div>
+            <p id="evidence-warning" class="caution-box" hidden>根拠はAIが選定した候補であり、原文上の位置や内容を保証するものではありません。</p>
+            <div id="comparison-grid" class="comparison-grid">
+              <section aria-labelledby="summary-items-title">
+                <h3 id="summary-items-title">要約項目</h3>
+                <ol id="summary-list" class="summary-list"></ol>
+              </section>
+              <section id="source-panel" aria-labelledby="source-title">
+                <h3 id="source-title">原文</h3>
+                <div id="source-list" class="source-list"></div>
+              </section>
+            </div>
+            <div class="output-actions">
+              <button id="copy-button" class="button button-secondary" type="button">全文をコピー</button>
+              <button id="markdown-button" class="button button-secondary" type="button">Markdown出力</button>
+              <button id="txt-button" class="button button-secondary" type="button">TXT出力</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description">
+      <h2 id="delete-title">保存済み要約を削除</h2>
+      <p id="delete-description"></p>
+      <p>削除後は復元できません。</p>
+      <form method="dialog" class="dialog-actions">
+        <button id="delete-cancel" class="button button-secondary" value="cancel">キャンセル</button>
+        <button id="delete-confirm" class="button button-danger" value="confirm">削除</button>
+      </form>
+    </dialog>
+
+    <footer class="app-footer">
+      <p>Supabase Auth / Database / Edge Functions ・ OpenAI Responses API（gpt-5.6-luna）</p>
+    </footer>
+  </body>
+</html>
