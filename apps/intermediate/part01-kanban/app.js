@@ -39,6 +39,7 @@ let state = createEmptyState();
 let returnFocusTarget = null;
 let dragOriginAllowed = true;
 let dropTarget = null;
+let pointerDrag = null;
 let descriptionMeasureFrame = 0;
 let descriptionElementSequence = 0;
 const dropPlaceholder = createElement("div", "drop-placeholder", "ここに移動");
@@ -314,6 +315,9 @@ function createTaskCard(task) {
   card.setAttribute("aria-label", `${task.title}を編集`);
 
   const heading = createElement("div", "card-heading");
+  const dragHandle = createElement("span", "drag-handle", "⠿");
+  dragHandle.setAttribute("aria-hidden", "true");
+  dragHandle.title = "ドラッグして移動";
   const title = createElement("h3", "card-title", task.title);
   const actions = createElement("div", "card-actions");
   const editButton = createElement("button", "card-action card-action-edit", "編集");
@@ -325,7 +329,7 @@ function createTaskCard(task) {
   deleteButton.draggable = false;
   deleteButton.setAttribute("aria-label", `${task.title}を削除`);
   actions.append(editButton, deleteButton);
-  heading.append(title, actions);
+  heading.append(dragHandle, title, actions);
   card.append(heading);
 
   if (task.description) {
@@ -356,7 +360,7 @@ function createTaskCard(task) {
   if (meta.childElementCount > 0) card.append(meta);
 
   card.addEventListener("click", (event) => {
-    if (!event.target.closest("button")) openEditDialog(task.id, card);
+    if (!event.target.closest("button, .drag-handle")) openEditDialog(task.id, card);
   });
   card.addEventListener("keydown", (event) => {
     if ((event.key === "Enter" || event.key === " ") && event.target === card) {
@@ -366,6 +370,7 @@ function createTaskCard(task) {
   });
   editButton.addEventListener("click", () => openEditDialog(task.id, editButton));
   deleteButton.addEventListener("click", () => deleteTask(task.id));
+  dragHandle.addEventListener("pointerdown", (event) => handlePointerDragStart(event, card, dragHandle));
 
   card.addEventListener("pointerdown", (event) => {
     dragOriginAllowed = !event.target.closest("button");
@@ -595,18 +600,29 @@ function handleDragOver(event) {
   if (!state.draggingTaskId) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
-  const list = event.currentTarget;
-  const status = list.dataset.status;
+  updateDropTarget(event.currentTarget, event.clientY);
+}
+
+function updateDropTarget(list, clientY) {
+  const status = list?.dataset.status;
+  if (!STATUSES.includes(status)) return;
   const cards = [...list.querySelectorAll(".task-card:not(.is-dragging)")];
-  const nextCard = cards.find((card) => event.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2);
+  const nextCard = cards.find((card) => clientY < card.getBoundingClientRect().top + card.offsetHeight / 2);
   const index = nextCard ? cards.indexOf(nextCard) : cards.length;
   dropTarget = { status, index };
+  for (const candidate of Object.values(elements.lists)) {
+    candidate.classList.toggle("drop-target", candidate === list);
+  }
   if (nextCard) list.insertBefore(dropPlaceholder, nextCard);
   else list.append(dropPlaceholder);
 }
 
 function handleDrop(event) {
   event.preventDefault();
+  finishDrag();
+}
+
+function finishDrag() {
   const taskId = state.draggingTaskId;
   const target = dropTarget;
   if (!taskId || !target || !getTask(taskId) || !STATUSES.includes(target.status)) {
@@ -641,13 +657,98 @@ function handleDrop(event) {
   if (!commit(candidate)) renderBoard();
 }
 
+function handlePointerDragStart(event, card, handle) {
+  if (!event.isPrimary || event.button !== 0 || pointerDrag || state.draggingTaskId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  state.draggingTaskId = card.dataset.taskId;
+  card.classList.add("is-dragging");
+  pointerDrag = {
+    pointerId: event.pointerId,
+    handle,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    scrollVelocity: 0,
+    scrollFrame: 0,
+  };
+  handle.setPointerCapture(event.pointerId);
+  document.body.classList.add("pointer-drag-active");
+  for (const list of Object.values(elements.lists)) list.classList.add("drop-active");
+  updatePointerDropTarget(event.clientX, event.clientY);
+}
+
+function handlePointerDragMove(event) {
+  if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+  event.preventDefault();
+  pointerDrag.clientX = event.clientX;
+  pointerDrag.clientY = event.clientY;
+  updatePointerDropTarget(event.clientX, event.clientY);
+  updatePointerAutoScroll(event.clientY);
+}
+
+function handlePointerDragEnd(event) {
+  if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+  event.preventDefault();
+  updatePointerDropTarget(event.clientX, event.clientY);
+  finishDrag();
+}
+
+function handlePointerDragCancel(event) {
+  if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+  cleanupDragState();
+  renderBoard();
+}
+
+function updatePointerDropTarget(clientX, clientY) {
+  const hit = document.elementFromPoint(clientX, clientY);
+  const list = hit?.closest(".task-list");
+  if (list) {
+    updateDropTarget(list, clientY);
+    return;
+  }
+  dropTarget = null;
+  dropPlaceholder.remove();
+  for (const candidate of Object.values(elements.lists)) candidate.classList.remove("drop-target");
+}
+
+function updatePointerAutoScroll(clientY) {
+  if (!pointerDrag) return;
+  const edge = 72;
+  pointerDrag.scrollVelocity = clientY < edge
+    ? -Math.min(18, Math.ceil((edge - clientY) / 8))
+    : clientY > window.innerHeight - edge
+      ? Math.min(18, Math.ceil((clientY - (window.innerHeight - edge)) / 8))
+      : 0;
+  if (pointerDrag.scrollVelocity && !pointerDrag.scrollFrame) {
+    pointerDrag.scrollFrame = requestAnimationFrame(runPointerAutoScroll);
+  }
+}
+
+function runPointerAutoScroll() {
+  if (!pointerDrag) return;
+  pointerDrag.scrollFrame = 0;
+  if (!pointerDrag.scrollVelocity) return;
+  window.scrollBy(0, pointerDrag.scrollVelocity);
+  updatePointerDropTarget(pointerDrag.clientX, pointerDrag.clientY);
+  pointerDrag.scrollFrame = requestAnimationFrame(runPointerAutoScroll);
+}
+
 function cleanupDragState() {
+  if (pointerDrag) {
+    const activePointer = pointerDrag;
+    pointerDrag = null;
+    if (activePointer.scrollFrame) cancelAnimationFrame(activePointer.scrollFrame);
+    if (activePointer.handle.hasPointerCapture(activePointer.pointerId)) {
+      activePointer.handle.releasePointerCapture(activePointer.pointerId);
+    }
+  }
   state.draggingTaskId = null;
   dropTarget = null;
   dragOriginAllowed = true;
   dropPlaceholder.remove();
   document.querySelectorAll(".task-card.is-dragging").forEach((card) => card.classList.remove("is-dragging"));
-  for (const list of Object.values(elements.lists)) list.classList.remove("drop-active");
+  document.body.classList.remove("pointer-drag-active");
+  for (const list of Object.values(elements.lists)) list.classList.remove("drop-active", "drop-target");
 }
 
 function trapDialogFocus(event) {
@@ -690,6 +791,10 @@ for (const list of Object.values(elements.lists)) {
   list.addEventListener("drop", handleDrop);
 }
 document.addEventListener("dragend", cleanupDragState);
+document.addEventListener("pointermove", handlePointerDragMove, { passive: false });
+document.addEventListener("pointerup", handlePointerDragEnd, { passive: false });
+document.addEventListener("pointercancel", handlePointerDragCancel);
+document.addEventListener("lostpointercapture", handlePointerDragCancel);
 document.addEventListener("drop", (event) => {
   if (!event.target.closest(".task-list")) cleanupDragState();
 });
