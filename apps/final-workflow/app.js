@@ -207,7 +207,7 @@
       if (view === "dashboard") await renderDashboard();
       else if (["requests", "approvals", "assignments"].includes(view)) await renderRequestList(view);
       else if (view === "notifications") await renderNotifications();
-      else if (view === "admin") renderAdminOverview();
+      else if (view === "admin") await renderAdminOverview();
     } catch (error) {
       console.error(error);
       renderError(elements["main-content"], errorMessage(error));
@@ -295,8 +295,14 @@
     const category = selectWithOptions([{ value: "", label: "すべてのカテゴリ" }, ...state.categories.map((item) => ({ value: item.id, label: item.name }))]);
     const priority = selectWithOptions([{ value: "", label: "すべての優先度" }, ...Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))]);
     const assignee = selectWithOptions([{ value: "", label: "すべての担当者" }, ...state.users.filter((item) => item.role === "worker").map((item) => ({ value: item.id, label: item.display_name }))]);
-    root.append(keyword, status, category, priority, assignee);
-    return { root, values: () => ({ keyword: keyword.value.trim().toLowerCase(), status: status.value, category: category.value, priority: priority.value, assignee: assignee.value }) };
+    const dueFrom = input("date", "");
+    dueFrom.setAttribute("aria-label", "期限（開始）");
+    dueFrom.title = "期限（開始）";
+    const dueTo = input("date", "");
+    dueTo.setAttribute("aria-label", "期限（終了）");
+    dueTo.title = "期限（終了）";
+    root.append(keyword, status, category, priority, assignee, dueFrom, dueTo);
+    return { root, values: () => ({ keyword: keyword.value.trim().toLowerCase(), status: status.value, category: category.value, priority: priority.value, assignee: assignee.value, dueFrom: dueFrom.value, dueTo: dueTo.value }) };
   }
 
   function filterRequests(rows, filters) {
@@ -306,6 +312,8 @@
       if (filters.category && item.category_id !== filters.category) return false;
       if (filters.priority && item.priority !== filters.priority) return false;
       if (filters.assignee && item.assignee_id !== filters.assignee) return false;
+      if (filters.dueFrom && item.desired_due_date < filters.dueFrom) return false;
+      if (filters.dueTo && item.desired_due_date > filters.dueTo) return false;
       return true;
     });
   }
@@ -705,13 +713,214 @@
     await renderNotifications();
   }
 
-  function renderAdminOverview() {
+  async function renderAdminOverview() {
+    const data = await invokeAdmin({ action: "list" });
     const main = elements["main-content"];
     main.textContent = "";
     main.append(pageHeader("管理", "ユーザー・部署・カテゴリと全体状況を管理します。"));
-    const panel = node("section", "panel");
-    panel.append(textNode("h2", "管理機能"), textNode("p", "ユーザー管理とマスタ管理は、Service Role Keyをブラウザへ置かず、専用Edge Functionを通して実装します。", "muted"));
-    main.append(panel);
+    const grid = node("div", "admin-grid");
+    grid.append(
+      buildAdminPanel("ユーザー", `${data.users.length}名`, "ユーザーを追加", createAdminUser, buildAdminUsersTable(data)),
+      buildAdminPanel("部署", `${data.departments.length}件`, "部署を追加", () => createAdminDepartment(data), buildAdminDepartmentsTable(data)),
+      buildAdminPanel("カテゴリ", `${data.categories.length}件`, "カテゴリを追加", createAdminCategory, buildAdminCategoriesTable(data))
+    );
+    main.append(grid);
+  }
+
+  function buildAdminPanel(title, count, buttonLabel, handler, content) {
+    const panel = node("section", "panel admin-panel");
+    const heading = node("div", "panel-header");
+    const copy = node("div");
+    copy.append(textNode("h2", title), textNode("span", count, "muted"));
+    heading.append(copy, createButton(buttonLabel, "primary small", handler));
+    panel.append(heading, content);
+    return panel;
+  }
+
+  function buildAdminUsersTable(data) {
+    return buildAdminTable(["氏名", "メール", "権限", "部署", "状態", ""], data.users.map((user) => [
+      user.display_name,
+      user.email,
+      ROLE_LABELS[user.role] || user.role,
+      data.departments.find((item) => item.id === user.department_id)?.name || "—",
+      user.is_active ? "有効" : "無効",
+      createButton("編集", "ghost small", () => updateAdminUser(user, data))
+    ]));
+  }
+
+  function buildAdminDepartmentsTable(data) {
+    return buildAdminTable(["部署名", "承認者", "状態", ""], data.departments.map((department) => [
+      department.name,
+      data.users.find((item) => item.id === department.approver_id)?.display_name || "未設定",
+      department.is_active ? "有効" : "無効",
+      createButton("編集", "ghost small", () => updateAdminDepartment(department, data))
+    ]));
+  }
+
+  function buildAdminCategoriesTable(data) {
+    return buildAdminTable(["カテゴリ名", "並び順", "状態", ""], data.categories.map((category) => [
+      category.name,
+      String(category.sort_order),
+      category.is_active ? "有効" : "無効",
+      createButton("編集", "ghost small", () => updateAdminCategory(category))
+    ]));
+  }
+
+  function buildAdminTable(headers, rows) {
+    if (!rows.length) return textNode("div", "登録はありません。", "empty-state");
+    const wrap = node("div", "table-wrap");
+    const table = document.createElement("table");
+    const head = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    headers.forEach((label) => headerRow.append(textNode("th", label)));
+    head.append(headerRow);
+    const body = document.createElement("tbody");
+    rows.forEach((values) => {
+      const row = document.createElement("tr");
+      values.forEach((value) => {
+        const cell = document.createElement("td");
+        if (value instanceof Node) cell.append(value);
+        else cell.textContent = value ?? "";
+        row.append(cell);
+      });
+      body.append(row);
+    });
+    table.append(head, body);
+    wrap.append(table);
+    return wrap;
+  }
+
+  async function createAdminUser() {
+    const email = promptValue("メールアドレス");
+    if (email === null) return;
+    const password = promptValue("初期パスワード（8文字以上）", "", false);
+    if (password === null) return;
+    const displayName = promptValue("表示名");
+    if (displayName === null) return;
+    const role = promptRole("requester");
+    if (role === null) return;
+    const departmentId = role === "admin" ? null : await chooseDepartmentId();
+    if (role !== "admin" && departmentId === undefined) return;
+    await runAdminAction({ action: "create_user", email, password, displayName, role, departmentId });
+  }
+
+  async function updateAdminUser(user, data) {
+    const displayName = promptValue("表示名", user.display_name);
+    if (displayName === null) return;
+    const role = promptRole(user.role);
+    if (role === null) return;
+    const departmentId = role === "admin" ? null : chooseIdFromList("部署", data.departments.filter((item) => item.is_active), user.department_id);
+    if (role !== "admin" && departmentId === undefined) return;
+    const isActive = promptBoolean("有効状態（true / false）", user.is_active);
+    if (isActive === null) return;
+    await runAdminAction({ action: "update_user", userId: user.id, displayName, role, departmentId, isActive });
+  }
+
+  async function createAdminDepartment(data) {
+    const name = promptValue("部署名");
+    if (name === null) return;
+    const approverId = chooseIdFromList("承認者（未設定は0）", data.users.filter((item) => item.role === "approver" && item.is_active), null, true);
+    if (approverId === undefined) return;
+    await runAdminAction({ action: "create_department", name, approverId });
+  }
+
+  async function updateAdminDepartment(department, data) {
+    const name = promptValue("部署名", department.name);
+    if (name === null) return;
+    const approverId = chooseIdFromList("承認者（未設定は0）", data.users.filter((item) => item.role === "approver" && item.is_active), department.approver_id, true);
+    if (approverId === undefined) return;
+    const isActive = promptBoolean("有効状態（true / false）", department.is_active);
+    if (isActive === null) return;
+    await runAdminAction({ action: "update_department", departmentId: department.id, name, approverId, isActive });
+  }
+
+  async function createAdminCategory() {
+    const name = promptValue("カテゴリ名");
+    if (name === null) return;
+    const sortOrder = promptInteger("並び順", 100);
+    if (sortOrder === null) return;
+    await runAdminAction({ action: "create_category", name, sortOrder });
+  }
+
+  async function updateAdminCategory(category) {
+    const name = promptValue("カテゴリ名", category.name);
+    if (name === null) return;
+    const sortOrder = promptInteger("並び順", category.sort_order);
+    if (sortOrder === null) return;
+    const isActive = promptBoolean("有効状態（true / false）", category.is_active);
+    if (isActive === null) return;
+    await runAdminAction({ action: "update_category", categoryId: category.id, name, sortOrder, isActive });
+  }
+
+  async function chooseDepartmentId() {
+    const data = await invokeAdmin({ action: "list" });
+    return chooseIdFromList("部署", data.departments.filter((item) => item.is_active), null);
+  }
+
+  function chooseIdFromList(label, items, selectedId = null, allowNone = false) {
+    const options = items.map((item, index) => `${index + 1}: ${item.name || item.display_name}`).join("\n");
+    const selectedIndex = items.findIndex((item) => item.id === selectedId);
+    const answer = window.prompt(`${label}を番号で選択してください。\n${allowNone ? "0: 未設定\n" : ""}${options}`, selectedIndex >= 0 ? String(selectedIndex + 1) : allowNone ? "0" : "1");
+    if (answer === null) return undefined;
+    if (allowNone && answer.trim() === "0") return null;
+    const index = Number(answer) - 1;
+    if (!Number.isInteger(index) || !items[index]) { showToast(`${label}の選択が正しくありません。`, true); return undefined; }
+    return items[index].id;
+  }
+
+  function promptValue(label, initial = "", trim = true) {
+    const value = window.prompt(label, initial);
+    if (value === null) return null;
+    return trim ? value.trim() : value;
+  }
+
+  function promptRole(initial) {
+    const value = promptValue("権限（requester / approver / worker / admin）", initial);
+    if (value === null) return null;
+    if (!ROLE_LABELS[value]) { showToast("権限の入力が正しくありません。", true); return null; }
+    return value;
+  }
+
+  function promptBoolean(label, initial) {
+    const value = promptValue(label, String(initial));
+    if (value === null) return null;
+    if (value !== "true" && value !== "false") { showToast("true または false を入力してください。", true); return null; }
+    return value === "true";
+  }
+
+  function promptInteger(label, initial) {
+    const value = promptValue(label, String(initial));
+    if (value === null) return null;
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < 0) { showToast("0以上の整数を入力してください。", true); return null; }
+    return number;
+  }
+
+  async function runAdminAction(payload) {
+    if (state.busy) return;
+    setBusy(true);
+    try {
+      await invokeAdmin(payload);
+      await loadReferenceData();
+      showToast("管理情報を更新しました。");
+      await renderAdminOverview();
+    } catch (error) {
+      console.error(error);
+      showToast(errorMessage(error), true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function invokeAdmin(payload) {
+    const { data, error } = await state.client.functions.invoke("admin-users", { body: payload });
+    if (!error) return data;
+    let code = error.message;
+    try {
+      const body = await error.context?.json();
+      if (body?.error) code = body.error;
+    } catch { /* response body is not always available */ }
+    throw new Error(code);
   }
 
   function pageHeader(title, description, action = null) {
@@ -818,7 +1027,18 @@
       workflow_assignee_invalid: "有効な作業担当者を選択してください。",
       workflow_reason_required: "理由を入力してください。",
       workflow_attachment_limit: "添付ファイルは最大5件です。",
-      workflow_attachments_must_be_deleted_first: "添付ファイルを削除してから案件を削除してください。"
+      workflow_attachments_must_be_deleted_first: "添付ファイルを削除してから案件を削除してください。",
+      email_already_exists: "このメールアドレスは登録済みです。",
+      department_required: "管理者以外には部署の設定が必要です。",
+      cannot_disable_self: "自分自身を無効化することはできません。",
+      cannot_remove_own_admin: "自分自身の管理者権限は解除できません。",
+      invalid_user: "ユーザー情報を確認してください。",
+      invalid_department: "部署情報を確認してください。",
+      invalid_approver: "有効な承認者を選択してください。",
+      invalid_category: "カテゴリ情報を確認してください。",
+      already_exists: "同じ名前のデータが登録済みです。",
+      forbidden: "この操作を行う権限がありません。",
+      service_unavailable: "管理APIの設定が完了していません。"
     };
     const key = Object.keys(map).find((item) => raw.includes(item));
     if (key) return map[key];

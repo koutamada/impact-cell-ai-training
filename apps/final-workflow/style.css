@@ -142,7 +142,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .panel-header h2 { margin: 0; font-size: 19px; }
 
-.filter-bar { display: grid; grid-template-columns: 1.5fr repeat(4, minmax(120px, .7fr)); gap: 10px; padding: 14px; margin-bottom: 18px; border-radius: 14px; background: var(--surface); }
+.filter-bar { display: grid; grid-template-columns: 1.5fr repeat(6, minmax(120px, .7fr)); gap: 10px; padding: 14px; margin-bottom: 18px; border-radius: 14px; background: var(--surface); }
 .filter-bar input, .filter-bar select { padding-block: 9px; }
 
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
@@ -206,6 +206,10 @@ tbody tr:hover { background: #fbfcfb; }
 .notification-item h3, .notification-item p { margin: 0; }
 .notification-item h3 { font-size: 14px; }
 .notification-item p { margin-top: 4px; color: var(--muted); font-size: 12px; }
+
+.admin-grid { display: grid; gap: 22px; }
+.admin-panel .panel-header > div { display: flex; align-items: baseline; gap: 10px; }
+.admin-panel table { min-width: 680px; }
 
 .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 100; display: grid; gap: 10px; }
 .toast { max-width: min(420px, calc(100vw - 40px)); padding: 13px 16px; border-radius: 11px; color: #fff; background: #24332e; box-shadow: var(--shadow); font-size: 13px; }
