@@ -32,7 +32,7 @@
 | フロントの危険なHTML挿入 | PASS | `innerHTML` 未使用、ユーザー値は `textContent` で描画 |
 | Service Role Keyの混入 | PASS | フロントエンドおよび設定ファイルに未記載 |
 | 静的検査の再現性 | PASS | `scripts/check-final-workflow.mjs` を実行し全項目PASS |
-| GitHub Actions | 実行待ち | push後に `Final workflow checks` が自動実行 |
+| GitHub Actions | PASS | `Final workflow checks` run `36134991281` が成功 |
 
 ## 必須シナリオ
 
