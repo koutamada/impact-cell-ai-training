@@ -48,7 +48,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 
 .auth-copy { color: #fff; max-width: 660px; }
 .auth-copy h1 { margin: 14px 0 24px; font-size: clamp(42px, 6vw, 76px); line-height: 1.08; letter-spacing: -.04em; }
-.auth-copy > p:last-child { max-width: 560px; color: #c8d9d2; line-height: 1.9; }
+.auth-copy > p:last-child { max-width: 460px; color: #c8d9d2; line-height: 1.9; }
 
 .auth-card {
   display: grid;
