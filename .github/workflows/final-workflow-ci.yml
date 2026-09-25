@@ -1,0 +1,38 @@
+name: Final workflow checks
+
+on:
+  push:
+    paths:
+      - "apps/final-workflow/**"
+      - "supabase/migrations/*final_workflow*.sql"
+      - "supabase/functions/admin-users/**"
+      - "scripts/check-final-workflow.mjs"
+      - ".github/workflows/final-workflow-ci.yml"
+  pull_request:
+    paths:
+      - "apps/final-workflow/**"
+      - "supabase/migrations/*final_workflow*.sql"
+      - "supabase/functions/admin-users/**"
+      - "scripts/check-final-workflow.mjs"
+      - ".github/workflows/final-workflow-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check browser JavaScript syntax
+        run: node --check apps/final-workflow/app.js
+      - name: Check setup and test scripts
+        run: |
+          node --check scripts/setup-final-workflow-test-users.mjs
+          node --check scripts/test-final-workflow.mjs
+      - name: Check permissions and RPC declarations
+        run: node scripts/check-final-workflow.mjs

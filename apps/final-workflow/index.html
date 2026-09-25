@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="社内業務依頼・承認ワークフロー管理システム">
+  <title>FlowDesk | 業務依頼管理</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app">
+    <section id="auth-view" class="auth-layout">
+      <div class="auth-copy">
+        <p class="eyebrow">INTERNAL REQUEST WORKFLOW</p>
+        <h1>依頼の現在地を、<br>ひとつの画面に。</h1>
+        <p>申請、承認、担当者への割り当て、完了まで。誰が次に動くのかが分かる社内業務ワークフローです。</p>
+      </div>
+      <form id="login-form" class="auth-card" novalidate>
+        <div>
+          <p class="eyebrow">FLOWDESK</p>
+          <h2>ログイン</h2>
+          <p class="muted">社内アカウントを入力してください。</p>
+        </div>
+        <label>メールアドレス
+          <input id="login-email" type="email" autocomplete="email" required>
+        </label>
+        <label>パスワード
+          <input id="login-password" type="password" autocomplete="current-password" required minlength="6">
+        </label>
+        <p id="login-error" class="form-error" role="alert" hidden></p>
+        <button id="login-button" class="button primary wide" type="submit">ログイン</button>
+      </form>
+    </section>
+
+    <section id="system-view" class="system-layout" hidden>
+      <header class="topbar">
+        <a class="brand" href="#dashboard" aria-label="ダッシュボードへ">
+          <span class="brand-mark">F</span>
+          <span>FlowDesk</span>
+        </a>
+        <div class="topbar-actions">
+          <button id="notification-button" class="icon-button" type="button" aria-label="通知">
+            <span aria-hidden="true">●</span>
+            <span id="notification-count" class="notification-count" hidden>0</span>
+          </button>
+          <div class="user-summary">
+            <strong id="header-user-name"></strong>
+            <span id="header-user-role"></span>
+          </div>
+          <button id="logout-button" class="button ghost small" type="button">ログアウト</button>
+        </div>
+      </header>
+
+      <aside class="sidebar" aria-label="メインメニュー">
+        <nav id="main-nav">
+          <button class="nav-item active" data-view="dashboard" type="button">ダッシュボード</button>
+          <button class="nav-item" data-view="requests" type="button">案件一覧</button>
+          <button class="nav-item" data-view="approvals" data-role="approver" type="button">承認待ち</button>
+          <button class="nav-item" data-view="assignments" data-role="worker" type="button">担当案件</button>
+          <button class="nav-item" data-view="notifications" type="button">通知</button>
+          <button class="nav-item" data-view="admin" data-role="admin" type="button">管理</button>
+        </nav>
+      </aside>
+
+      <main id="main-content" class="main-content" tabindex="-1">
+        <div class="loading-panel">読み込み中…</div>
+      </main>
+    </section>
+  </div>
+
+  <dialog id="request-dialog" class="dialog request-dialog">
+    <form id="request-form" method="dialog" novalidate>
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">REQUEST</p>
+          <h2 id="request-dialog-title">新しい依頼</h2>
+        </div>
+        <button class="icon-button" data-close-dialog="request-dialog" type="button" aria-label="閉じる">×</button>
+      </div>
+      <input id="request-id" type="hidden">
+      <input id="request-version" type="hidden">
+      <div class="form-grid">
+        <label class="span-2">タイトル
+          <input id="request-title" type="text" maxlength="120" required>
+        </label>
+        <label>カテゴリ
+          <select id="request-category" required></select>
+        </label>
+        <label>優先度
+          <select id="request-priority" required>
+            <option value="low">低</option>
+            <option value="normal" selected>通常</option>
+            <option value="high">高</option>
+            <option value="urgent">緊急</option>
+          </select>
+        </label>
+        <label>希望期限
+          <input id="request-due-date" type="date" required>
+        </label>
+        <label class="span-2">依頼内容
+          <textarea id="request-description" rows="8" maxlength="5000" required></textarea>
+          <span id="description-count" class="field-hint">0 / 5000</span>
+        </label>
+      </div>
+      <p id="request-form-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button class="button ghost" data-close-dialog="request-dialog" type="button">キャンセル</button>
+        <button id="request-save-button" class="button primary" type="submit">下書きを保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="dialog detail-dialog">
+    <div class="dialog-header sticky">
+      <div>
+        <p id="detail-number" class="eyebrow"></p>
+        <h2 id="detail-title"></h2>
+      </div>
+      <button class="icon-button" data-close-dialog="detail-dialog" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div id="detail-content" class="detail-content"></div>
+  </dialog>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="../intermediate/part06-document-summarizer/vendor/supabase-js/supabase.js"></script>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
