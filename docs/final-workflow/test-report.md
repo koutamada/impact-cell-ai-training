@@ -31,10 +31,12 @@
 | 公開RPCの実行権限 | PASS | 17公開RPCすべてに個別GRANTあり |
 | フロントの危険なHTML挿入 | PASS | `innerHTML` 未使用、ユーザー値は `textContent` で描画 |
 | Service Role Keyの混入 | PASS | フロントエンドおよび設定ファイルに未記載 |
+| 静的検査の再現性 | PASS | `scripts/check-final-workflow.mjs` を実行し全項目PASS |
+| GitHub Actions | 実行待ち | push後に `Final workflow checks` が自動実行 |
 
 ## 必須シナリオ
 
-DB反映後、以下を順番に実行して結果欄を更新します。現時点ではリモートSupabaseへ未反映のため、ブラウザ統合テストは `未実施` としています。未実施をPASSとして扱いません。
+DB反映後、`scripts/test-final-workflow.mjs` でAPIレベルの一括検証を行い、その後ブラウザでも以下を順番に確認して結果欄を更新します。現時点ではリモートSupabaseへ未反映のため、統合テストは `未実施` としています。未実施をPASSとして扱いません。
 
 | # | 操作 | 期待結果 | 結果 |
 |---|---|---|---|
@@ -61,4 +63,3 @@ DB反映後、以下を順番に実行して結果欄を更新します。現時
 ## 完了判定
 
 必須8シナリオを実環境で実行し、すべてPASSに更新してから提出版とします。不具合が出た場合は、ブラウザのNetwork、Edge Functionログ、Postgresログの順に、認証・RLS・RPC・入力制約のどこで拒否されたかを切り分けます。
-

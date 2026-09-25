@@ -75,7 +75,25 @@ python3 -m http.server 8000
 
 ### 5. テストを実施
 
-`docs/final-workflow/test-report.md` の順に4権限のブラウザセッションを切り替えて確認します。権限回避テストは、開発者ツールからRPCを直接実行してサーバーが拒否することまで確認してください。
+必須8シナリオは、次のコマンドでAPIレベルの自動検証を実行できます。
+
+```bash
+SUPABASE_URL=https://oootrzkkkzgshnmocnzw.supabase.co \
+SUPABASE_PUBLISHABLE_KEY='YOUR_PUBLISHABLE_KEY' \
+TEST_PASSWORD='セットアップ時と同じパスワード' \
+node scripts/test-final-workflow.mjs
+```
+
+続いて `docs/final-workflow/test-report.md` の順にブラウザでも確認します。自動テストは権限・状態遷移・履歴を検証し、ブラウザ試験は画面表示と操作性を検証するため、両方を実施します。
+
+依存パッケージ不要の静的検査は次で再実行できます。
+
+```bash
+node --check apps/final-workflow/app.js
+node scripts/check-final-workflow.mjs
+```
+
+同じ検査は `.github/workflows/final-workflow-ci.yml` によりpushとPull Requestでも実行されます。
 
 ## セキュリティ上の要点
 
@@ -84,4 +102,3 @@ python3 -m http.server 8000
 - 管理APIはJWTを検証し、DB上で有効な管理者か再確認します。
 - 添付ファイルは非公開バケットに保存し、ダウンロード時に短時間の署名URLを発行します。
 - Service Role Key、DB接続情報、テストパスワードはコミットしません。
-
