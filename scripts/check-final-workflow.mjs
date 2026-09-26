@@ -4,6 +4,8 @@ const schema = await read("supabase/migrations/20260924150000_final_workflow_sch
 const rpc = await read("supabase/migrations/20260924151000_final_workflow_rpc.sql");
 const app = await read("apps/final-workflow/app.js");
 const config = await read("apps/final-workflow/config.js");
+const adminFunction = await read("supabase/functions/admin-users/index.ts");
+const supabaseConfig = await read("supabase/config.toml");
 
 const publicRpcs = [
   "workflow_get_my_context", "workflow_create_request", "workflow_update_request",
@@ -22,6 +24,12 @@ check(!/grant\s+(insert|update|delete)[^;]*to\s+authenticated/iu.test(schema + r
 check(/alter table public\.workflow_requests enable row level security;/i.test(schema), "案件テーブルでRLSが有効");
 check(/create policy workflow_requests_select/i.test(schema), "案件閲覧ポリシーが存在");
 check(/create policy workflow_storage_select/i.test(schema), "添付Storageの閲覧ポリシーが存在");
+check(/await navigate\(state\.currentView, false\);[\s\S]*await openDetail\(request\.id\);/.test(app), "状態変更後に一覧と詳細を再取得する");
+check(/SUPABASE_PUBLISHABLE_KEYS/.test(adminFunction) && /SUPABASE_SECRET_KEYS/.test(adminFunction), "Edge Functionが現行Supabaseキーに対応");
+check(/auth\.getUser\(token\)/.test(adminFunction), "Edge FunctionがBearer tokenを明示検証");
+check(/actor\.role !== "admin"/.test(adminFunction) && /actor\.is_active !== true/.test(adminFunction), "Edge Functionが有効な管理者ロールを検証");
+check(/headers\.set\("apikey", secretKey\)/.test(adminFunction), "Secret Keyをapikeyヘッダーで送信");
+check(/\[functions\.admin-users\][\s\S]*?verify_jwt\s*=\s*false/.test(supabaseConfig), "admin-usersのLegacy JWT verificationが無効");
 
 for (const name of publicRpcs) {
   check(new RegExp(`create or replace function public\\.${name}\\s*\\(`, "i").test(rpc), `${name} が定義済み`);
