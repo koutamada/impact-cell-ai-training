@@ -8,10 +8,12 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONTROL_PATTERN = /[\u0000-\u001f\u007f-\u009f]/u;
 const ROLES = new Set(["requester", "approver", "worker", "admin"]);
+const PUBLISHABLE_KEY = readNamedKey("SUPABASE_PUBLISHABLE_KEYS");
+const SECRET_KEY = readNamedKey("SUPABASE_SECRET_KEYS");
 const CONFIG = {
   url: Deno.env.get("SUPABASE_URL"),
-  anonKey: Deno.env.get("SUPABASE_ANON_KEY"),
-  serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+  anonKey: PUBLISHABLE_KEY || Deno.env.get("SUPABASE_ANON_KEY"),
+  serviceRoleKey: SECRET_KEY || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 };
 
 type AdminClient = ReturnType<typeof createClient>;
@@ -45,17 +47,18 @@ Deno.serve(async (request) => {
   const { data: authData, error: authError } = await userClient.auth.getUser(token);
   if (authError || !authData.user?.id) return errorResponse("unauthorized", 401, headers);
 
-  const admin = createClient(CONFIG.url, CONFIG.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-  const { data: actor, error: actorError } = await admin.from("workflow_users")
+  const { data: actor, error: actorError } = await userClient.from("workflow_users")
     .select("id,role,is_active")
     .eq("id", authData.user.id)
     .maybeSingle();
-  if (actorError) return errorResponse("database_error", 500, headers);
+  if (actorError) {
+    console.error("[admin-users] actor lookup failed", actorError.code || "unknown");
+    return errorResponse("database_error", 500, headers);
+  }
   if (!actor || actor.role !== "admin" || actor.is_active !== true) {
     return errorResponse("forbidden", 403, headers);
   }
+  const admin = createAdminClient(CONFIG.url, CONFIG.serviceRoleKey);
 
   const contentLength = Number(request.headers.get("content-length") || "0");
   if (Number.isFinite(contentLength) && contentLength > 20000) {
@@ -75,7 +78,9 @@ Deno.serve(async (request) => {
   const input = body as Input;
   const action = typeof input.action === "string" ? input.action : "";
   try {
-    if (action === "list") return jsonResponse(await listAdminData(admin), 200, headers);
+    if (action === "list") {
+      return jsonResponse(await listAdminData(userClient, admin, authData.user.id, authData.user.email || ""), 200, headers);
+    }
     if (action === "create_user") return jsonResponse(await createUser(admin, actor.id, input), 201, headers);
     if (action === "update_user") return jsonResponse(await updateUser(admin, actor.id, input), 200, headers);
     if (action === "create_department") return jsonResponse(await createDepartment(admin, actor.id, input), 201, headers);
@@ -90,21 +95,48 @@ Deno.serve(async (request) => {
   }
 });
 
-async function listAdminData(admin: AdminClient) {
+async function listAdminData(userClient: AdminClient, admin: AdminClient, currentUserId: string, currentUserEmail: string) {
   const [{ data: profiles, error: profilesError }, departments, categories, authUsers] = await Promise.all([
-    admin.from("workflow_users").select("id,display_name,role,department_id,is_active,created_at,updated_at").order("display_name"),
-    admin.from("workflow_departments").select("id,name,approver_id,is_active,created_at,updated_at").order("name"),
-    admin.from("workflow_categories").select("id,name,is_active,sort_order,created_at,updated_at").order("sort_order"),
+    userClient.from("workflow_users").select("id,display_name,role,department_id,is_active,created_at,updated_at").order("display_name"),
+    userClient.from("workflow_departments").select("id,name,approver_id,is_active,created_at,updated_at").order("name"),
+    userClient.from("workflow_categories").select("id,name,is_active,sort_order,created_at,updated_at").order("sort_order"),
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
   ]);
-  if (profilesError || departments.error || categories.error || authUsers.error) {
-    throw new SafeError("database_error", 500);
-  }
-  const emailById = new Map(authUsers.data.users.map((user) => [user.id, user.email || ""]));
+  const emailById = new Map((authUsers.data?.users || []).map((user) => [user.id, user.email || ""]));
+  if (authUsers.error) emailById.set(currentUserId, currentUserEmail);
   return {
-    users: (profiles || []).map((profile) => ({ ...profile, email: emailById.get(profile.id) || "" })),
-    departments: departments.data || [],
-    categories: categories.data || []
+    users: profilesError ? [] : (profiles || []).map((profile) => ({ ...profile, email: emailById.get(profile.id) || "" })),
+    departments: departments.error ? [] : departments.data || [],
+    categories: categories.error ? [] : categories.data || []
+  };
+}
+
+function readNamedKey(name: string) {
+  const raw = Deno.env.get(name);
+  if (!raw) return null;
+  try {
+    const keys = JSON.parse(raw);
+    return typeof keys?.default === "string" && keys.default ? keys.default : null;
+  } catch {
+    return null;
+  }
+}
+
+function createAdminClient(url: string, key: string) {
+  return createClient(url, key, {
+    global: SECRET_KEY ? { fetch: secretKeyFetch(SECRET_KEY) } : undefined,
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+function secretKeyFetch(secretKey: string) {
+  return (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const headers = new Headers(init.headers);
+    if (headers.get("Authorization") === `Bearer ${secretKey}`) {
+      headers.delete("Authorization");
+    }
+    headers.set("apikey", secretKey);
+    return fetch(input, { ...init, headers });
   };
 }
 
