@@ -50,11 +50,10 @@ erDiagram
 2. `authenticated` には業務テーブルの直接 `INSERT / UPDATE / DELETE` を与えません。
 3. 書き込みは `SECURITY DEFINER` RPCで行い、呼出者、有効状態、役割、現在状態、対象者、入力値を検証します。
 4. RPCは `search_path` を固定し、権限昇格時のオブジェクト差し替えを防ぎます。
-5. 管理者のAuth操作だけはEdge FunctionがService Roleを使用し、JWTと管理者ロールを二重確認します。
+5. 管理者のAuth操作だけはEdge Functionがサーバー専用Secret Key（旧環境ではService Role Key）を使用し、JWTと管理者ロールを二重確認します。
 6. Storageは非公開バケットとオブジェクトポリシーで保護します。
 
 ## マイグレーション
 
 - `20260924150000_final_workflow_schema.sql`: 型、テーブル、索引、トリガー、RLS、Storage、初期カテゴリ
 - `20260924151000_final_workflow_rpc.sql`: 状態遷移・コメント・添付・通知・ダッシュボードRPCと権限付与
-

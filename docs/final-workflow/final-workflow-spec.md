@@ -57,7 +57,7 @@
 | DB | Supabase PostgreSQL | RLS、RPC、トランザクション、監査ログを一つの基盤で実装できるため |
 | 権限制御 | RLS + PostgreSQL RPC | URL・REST APIの直接操作でも権限を回避できないようにするため |
 | ファイル | Supabase Storageの非公開バケット | AuthとRLSを利用して案件関係者だけに公開できるため |
-| 管理者ユーザー操作 | Supabase Edge Function | Service Role Keyをブラウザへ公開せず、管理者権限を再検証するため |
+| 管理者ユーザー操作 | Supabase Edge Function | サーバー専用Secret Keyをブラウザへ公開せず、管理者権限を再検証するため |
 | リアルタイム更新 | Supabase Realtime（通知のみ、実装余力に応じて） | 必須処理はDB保存で成立させ、Realtime障害時も再読込で復元できるようにするため |
 
 ## 4. ユーザーと役割
@@ -363,7 +363,7 @@ RPCを `security definer` で実装する場合は、次を必須とする。
 5. `auth.users` と `profiles` の処理結果を整合させる。
 6. ユーザー追加、表示名・部署・役割変更、無効化を監査ログへ記録する。
 
-Service Role KeyはEdge Function Secretへ保存し、フロントエンド、Git、README、ログへ出力しない。
+Secret Key（旧環境ではService Role Key）はEdge Function内だけで使用し、フロントエンド、Git、README、ログへ出力しない。プラットフォーム側のLegacy JWT verificationには依存せず、関数内で`auth.getUser`と有効な管理者ロールを検証する。
 
 ### 11.2 無効化
 
@@ -578,21 +578,21 @@ apps/final-workflow/
   index.html
   style.css
   app.js
+  config.js
   config.example.js
-  assets/
 
 docs/final-workflow/
   final-workflow-spec.md
-  final-workflow-db.md
-  final-workflow-acceptance.md
-  final-workflow-test-results.md
-  final-workflow-work-log.md
+  database.md
+  acceptance.md
+  test-report.md
 
 supabase/functions/admin-users/
   index.ts
 
 supabase/migrations/
-  YYYYMMDDHHMMSS_final_workflow.sql
+  20260924150000_final_workflow_schema.sql
+  20260924151000_final_workflow_rpc.sql
 ```
 
 秘密情報を含むローカル設定ファイルはGit管理対象外とし、公開可能な例だけを `config.example.js` として置く。

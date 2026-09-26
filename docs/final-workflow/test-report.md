@@ -2,7 +2,7 @@
 
 ## 実行環境
 
-- 対象ブランチ: `feat/final-workflow`
+- 対象ブランチ: `main`
 - ブラウザ: Chrome最新版を推奨
 - DB/API: Supabase
 - 実行前提: マイグレーション、`admin-users` Edge Function、テストアカウントの反映が完了していること
@@ -32,7 +32,7 @@
 | フロントの危険なHTML挿入 | PASS | `innerHTML` 未使用、ユーザー値は `textContent` で描画 |
 | Service Role Keyの混入 | PASS | フロントエンドおよび設定ファイルに未記載 |
 | 静的検査の再現性 | PASS | `scripts/check-final-workflow.mjs` を実行し全項目PASS |
-| GitHub Actions | PASS | `Final workflow checks` run `36134991281` が成功 |
+| GitHub Actions | PASS | PR #4 の `Final workflow checks` run `36231605739` が成功 |
 
 ## 必須シナリオ
 
@@ -59,7 +59,23 @@
 - 操作履歴: `created` → `submitted` → `approved` → `assigned` → `started` → `completed`
 - 拒否確認: 他人の案件閲覧、一般ユーザーの直接更新・承認RPC、担当外作業者の開始RPC
 
-画面表示や操作感の最終確認は、公開URLへフロントエンド設定を反映した後に別途行います。今回のPASSは、リモートDB上での権限・状態遷移・RLS・監査履歴の統合結果です。
+必須8シナリオのPASSは、リモートDB上での権限・状態遷移・RLS・監査履歴の統合結果です。公開画面での役割別操作は、下記「公開環境の画面確認」と分けて記録します。
+
+## 公開環境の画面確認
+
+2026-09-25〜26、GitHub Pagesの公開版で管理者アカウントによる確認を行いました。
+
+| 確認項目 | 結果 | 確認内容 |
+|---|---|---|
+| 管理者ログイン | PASS | `admin@example.com` でログインし、管理者表示とダッシュボード遷移を確認 |
+| 管理者ダッシュボード | PASS | 全案件2件と最近の案件2件を表示 |
+| 管理画面の取得 | PASS | ユーザー6名、部署2件、カテゴリ6件を表示 |
+| Edge Function認証 | PASS | 現行のSupabase Publishable/Secret Key環境で管理データを取得 |
+| 管理者UID・権限の維持 | PASS | 既存管理者を再作成せず、同一ユーザーの管理者権限を維持 |
+
+管理画面の初回確認ではEdge Functionが500を返したため、現行キーの読込、Secret Keyの`apikey`送信、関数内でのJWT・管理者ロール再検証へ修正しました。Supabase側のLegacy JWT verificationは無効化していますが、関数自身が`auth.getUser`と`workflow_users`の有効な管理者ロールを確認します。修正はPR #4で`main`へ反映済みです。
+
+一般ユーザー・承認者・作業担当者による公開画面上の一連操作、添付、コメント、通知、375px表示は未確認です。サーバー側8シナリオのPASSと混同しないよう、`acceptance.md`で別管理します。
 
 ## 追加の異常系
 
@@ -74,4 +90,4 @@
 
 ## 完了判定
 
-必須8シナリオのサーバー側統合テストはすべてPASSです。公開URLでの画面確認を終えた後に提出版とします。不具合が出た場合は、ブラウザのNetwork、Edge Functionログ、Postgresログの順に、認証・RLS・RPC・入力制約のどこで拒否されたかを切り分けます。
+必須8シナリオのサーバー側統合テストはすべてPASSし、公開URLで管理者ログイン・ダッシュボード・管理データ表示まで確認済みです。役割別の公開画面操作と主要異常系の画面確認を終えた後に提出版とします。不具合が出た場合は、ブラウザのNetwork、Edge Functionログ、Postgresログの順に、認証・RLS・RPC・入力制約のどこで拒否されたかを切り分けます。

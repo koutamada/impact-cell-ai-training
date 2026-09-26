@@ -8,6 +8,7 @@
 - 設計書: [`docs/final-workflow/final-workflow-spec.md`](docs/final-workflow/final-workflow-spec.md)
 - DB構成: [`docs/final-workflow/database.md`](docs/final-workflow/database.md)
 - テスト計画・結果: [`docs/final-workflow/test-report.md`](docs/final-workflow/test-report.md)
+- 受入チェック: [`docs/final-workflow/acceptance.md`](docs/final-workflow/acceptance.md)
 - DBマイグレーション: [`supabase/migrations/`](supabase/migrations/)
 - 管理者用Edge Function: [`supabase/functions/admin-users/`](supabase/functions/admin-users/)
 
@@ -19,7 +20,7 @@
 | Supabase Auth | ログイン・セッション | 既存プロジェクトを再利用でき、PostgreSQLの `auth.uid()` とRLSを直接連携できるため |
 | Supabase PostgreSQL | 永続化・状態遷移 | トランザクション、制約、RLS、RPCによりサーバー側で不正操作を拒否できるため |
 | Supabase Storage | 添付ファイル | 非公開バケットとRLSで案件閲覧権限とファイル権限を揃えられるため |
-| Supabase Edge Functions | ユーザー管理 | Service Role Keyをブラウザへ公開せずAuth管理APIを実行するため |
+| Supabase Edge Functions | ユーザー管理 | サーバー専用Secret Keyをブラウザへ公開せずAuth管理APIを実行するため |
 | GitHub Pages | 静的ホスティング | 既存の公開方法を継続利用できるため |
 
 ### 主な機能
@@ -50,7 +51,7 @@ supabase db push
 supabase functions deploy admin-users
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` はEdge Function側にSupabaseの組み込みシークレットとして提供されます。ソースコードや `config.js` へ記載しないでください。
+Edge Functionは現行の`SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS`を使用し、旧環境では`SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`へフォールバックします。Secret KeyまたはService Role Keyをソースコードや`config.js`へ記載しないでください。`admin-users`は`verify_jwt = false`でデプロイしますが、関数内でBearer tokenを`auth.getUser`へ渡し、有効な管理者ロールまで明示的に再検証します。
 
 ### 3. テストアカウントを作成
 
