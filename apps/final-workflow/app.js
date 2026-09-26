@@ -513,7 +513,9 @@
     setBusy(false);
     if (error) { showToast(errorMessage(error), true); return; }
     showToast(successMessage);
-    await Promise.all([loadNotifications(), openDetail(request.id)]);
+    await loadNotifications();
+    await navigate(state.currentView, false);
+    await openDetail(request.id);
   }
 
   async function reasonAction(functionName, request, label) {
