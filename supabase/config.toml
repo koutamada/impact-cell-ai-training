@@ -392,7 +392,7 @@ deno_version = 2
 
 [functions.admin-users]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 
 [analytics]
 enabled = true
