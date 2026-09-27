@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 const schema = await read("supabase/migrations/20260924150000_final_workflow_schema.sql");
 const rpc = await read("supabase/migrations/20260924151000_final_workflow_rpc.sql");
+const conflictFix = await read("supabase/migrations/20260927173000_final_workflow_conflict_sqlstate.sql");
 const app = await read("apps/final-workflow/app.js");
 const style = await read("apps/final-workflow/style.css");
 const config = await read("apps/final-workflow/config.js");
@@ -32,6 +33,8 @@ check(/size_bytes between 1 and 10485760/i.test(schema), "DBが添付を10MiB以
 check(/10485760,[\s\S]*array\['image\/jpeg', 'image\/png', 'application\/pdf'\]/i.test(schema), "Storageが添付形式と10MiB上限を制限");
 check(/@media \(max-width: 560px\)[\s\S]*\.main-content \{ padding: 24px 14px 40px; \}[\s\S]*\.form-grid \{ grid-template-columns: 1fr;/i.test(style), "560px以下の主要画面にモバイルレイアウトがある");
 check(/await navigate\(state\.currentView, false\);[\s\S]*await openDetail\(request\.id\);/.test(app), "状態変更後に一覧と詳細を再取得する");
+check(/workflow_version_conflict:\s*"他の操作により案件が更新されました。再読み込みしてください。"/.test(app), "競合時に再読み込みを案内する");
+check(/'errcode = ''40001'''[\s\S]*'errcode = ''P0001'''/.test(conflictFix), "競合を再試行対象外のSQLSTATEへ変更する");
 check(/SUPABASE_PUBLISHABLE_KEYS/.test(adminFunction) && /SUPABASE_SECRET_KEYS/.test(adminFunction), "Edge Functionが現行Supabaseキーに対応");
 check(/auth\.getUser\(token\)/.test(adminFunction), "Edge FunctionがBearer tokenを明示検証");
 check(/actor\.role !== "admin"/.test(adminFunction) && /actor\.is_active !== true/.test(adminFunction), "Edge Functionが有効な管理者ロールを検証");
@@ -41,6 +44,14 @@ check(/\[functions\.admin-users\][\s\S]*?verify_jwt\s*=\s*false/.test(supabaseCo
 for (const name of publicRpcs) {
   check(new RegExp(`create or replace function public\\.${name}\\s*\\(`, "i").test(rpc), `${name} が定義済み`);
   check(new RegExp(`grant execute on function public\\.${name}\\s*\\(`, "i").test(rpc), `${name} の実行権限を明示`);
+}
+
+for (const name of [
+  "workflow_update_request", "workflow_delete_request", "workflow_submit_request",
+  "workflow_approve_request", "workflow_reject_request", "workflow_return_request",
+  "workflow_assign_request", "workflow_start_request", "workflow_complete_request"
+]) {
+  check(conflictFix.includes(`'${name}'`), `${name} の競合SQLSTATEを補正`);
 }
 
 const definitions = [...rpc.matchAll(/create or replace function public\.(workflow_[a-z0-9_]+)\s*\(/gi)].map((match) => match[1]);
