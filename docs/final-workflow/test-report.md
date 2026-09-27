@@ -31,6 +31,8 @@
 | 公開RPCの実行権限 | PASS | 17公開RPCすべてに個別GRANTあり |
 | フロントの危険なHTML挿入 | PASS | `innerHTML` 未使用、ユーザー値は `textContent` で描画 |
 | Service Role Keyの混入 | PASS | フロントエンドおよび設定ファイルに未記載 |
+| 添付形式・容量制約 | PASS | フロント、DB、Storageの3層でJPEG・PNG・PDFおよび10MiB上限を検査 |
+| モバイルCSS | PASS | 560px以下の主要画面に1列化・余白調整があることを静的検査 |
 | 静的検査の再現性 | PASS | `scripts/check-final-workflow.mjs` を実行し全項目PASS |
 | GitHub Actions | PASS | PR #4 の `Final workflow checks` run `36231605739` が成功 |
 
