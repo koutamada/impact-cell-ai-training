@@ -38,6 +38,9 @@ check(/'errcode = ''40001'''[\s\S]*'errcode = ''P0001'''/.test(conflictFix), "�
 check(/SUPABASE_PUBLISHABLE_KEYS/.test(adminFunction) && /SUPABASE_SECRET_KEYS/.test(adminFunction), "Edge Functionが現行Supabaseキーに対応");
 check(/auth\.getUser\(token\)/.test(adminFunction), "Edge FunctionがBearer tokenを明示検証");
 check(/actor\.role !== "admin"/.test(adminFunction) && /actor\.is_active !== true/.test(adminFunction), "Edge Functionが有効な管理者ロールを検証");
+check(/userId === actorId && input\.isActive === false[\s\S]*cannot_disable_self/.test(adminFunction), "管理APIが管理者自身の無効化を拒否");
+check(/userId === actorId && role !== "admin"[\s\S]*cannot_remove_own_admin/.test(adminFunction), "管理APIが自身の管理者権限解除を拒否");
+check(/workflow_assert_actor[\s\S]*where id = \(select auth\.uid\(\)\)[\s\S]*and is_active = true;/.test(rpc), "RPCが無効ユーザーの既存セッションを拒否");
 check(/headers\.set\("apikey", secretKey\)/.test(adminFunction), "Secret Keyをapikeyヘッダーで送信");
 check(/\[functions\.admin-users\][\s\S]*?verify_jwt\s*=\s*false/.test(supabaseConfig), "admin-usersのLegacy JWT verificationが無効");
 
