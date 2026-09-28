@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 const schema = await read("supabase/migrations/20260924150000_final_workflow_schema.sql");
 const rpc = await read("supabase/migrations/20260924151000_final_workflow_rpc.sql");
 const conflictFix = await read("supabase/migrations/20260927173000_final_workflow_conflict_sqlstate.sql");
+const adminGrants = await read("supabase/migrations/20260928120000_final_workflow_admin_service_role_grants.sql");
 const app = await read("apps/final-workflow/app.js");
 const style = await read("apps/final-workflow/style.css");
 const config = await read("apps/final-workflow/config.js");
@@ -42,6 +43,10 @@ check(/userId === actorId && input\.isActive === false[\s\S]*cannot_disable_self
 check(/userId === actorId && role !== "admin"[\s\S]*cannot_remove_own_admin/.test(adminFunction), "管理APIが自身の管理者権限解除を拒否");
 check(/workflow_assert_actor[\s\S]*where id = \(select auth\.uid\(\)\)[\s\S]*and is_active = true;/.test(rpc), "RPCが無効ユーザーの既存セッションを拒否");
 check(/headers\.set\("apikey", secretKey\)/.test(adminFunction), "Secret Keyをapikeyヘッダーで送信");
+check(/grant select, insert, update[\s\S]*workflow_users[\s\S]*to service_role;/i.test(adminGrants), "管理APIがユーザーを書き込み可能");
+check(/grant select, insert, update[\s\S]*workflow_departments[\s\S]*to service_role;/i.test(adminGrants), "管理APIが部署を書き込み可能");
+check(/grant select, insert, update[\s\S]*workflow_categories[\s\S]*to service_role;/i.test(adminGrants), "管理APIがカテゴリを書き込み可能");
+check(/grant insert[\s\S]*workflow_audit_logs[\s\S]*to service_role;/i.test(adminGrants) && /grant usage, select[\s\S]*workflow_audit_logs_id_seq[\s\S]*to service_role;/i.test(adminGrants), "管理APIが監査ログを書き込み可能");
 check(/\[functions\.admin-users\][\s\S]*?verify_jwt\s*=\s*false/.test(supabaseConfig), "admin-usersのLegacy JWT verificationが無効");
 
 for (const name of publicRpcs) {
