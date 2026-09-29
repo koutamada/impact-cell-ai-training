@@ -4,11 +4,13 @@
 
 ## 最終課題 FlowDesk
 
+- 公開版: [https://koutamada.github.io/impact-cell-ai-training/apps/final-workflow/](https://koutamada.github.io/impact-cell-ai-training/apps/final-workflow/)
 - アプリ: [`apps/final-workflow/`](apps/final-workflow/)
 - 設計書: [`docs/final-workflow/final-workflow-spec.md`](docs/final-workflow/final-workflow-spec.md)
 - DB構成: [`docs/final-workflow/database.md`](docs/final-workflow/database.md)
 - テスト計画・結果: [`docs/final-workflow/test-report.md`](docs/final-workflow/test-report.md)
 - 受入チェック: [`docs/final-workflow/acceptance.md`](docs/final-workflow/acceptance.md)
+- 提出物チェックリスト: [`docs/final-workflow/submission-checklist.md`](docs/final-workflow/submission-checklist.md)
 - DBマイグレーション: [`supabase/migrations/`](supabase/migrations/)
 - 管理者用Edge Function: [`supabase/functions/admin-users/`](supabase/functions/admin-users/)
 
@@ -35,25 +37,34 @@
 
 ## セットアップ
 
-### 1. 必要なもの
+### 1. リポジトリを取得
+
+```bash
+git clone https://github.com/koutamada/impact-cell-ai-training.git
+cd impact-cell-ai-training
+```
+
+### 2. 必要なもの
 
 - Node.js 20以降
 - Python 3（静的サーバー用。別のHTTPサーバーでも可）
 - Supabase CLI
-- Supabaseプロジェクトへの操作権限
+- Supabaseプロジェクトと、そのプロジェクトへの操作権限
 
-### 2. Supabaseを反映
+### 3. Supabaseを反映
+
+`YOUR_PROJECT_REF` は構築先SupabaseプロジェクトのProject IDに置き換えます。現在の公開環境を更新する場合は、その既存プロジェクトへの権限が必要です。第三者が再構築する場合は、自分で作成したSupabaseプロジェクトを指定します。
 
 ```bash
 supabase login
-supabase link --project-ref oootrzkkkzgshnmocnzw
+supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 supabase functions deploy admin-users
 ```
 
 Edge Functionは現行の`SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS`を使用し、旧環境では`SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`へフォールバックします。Secret KeyまたはService Role Keyをソースコードや`config.js`へ記載しないでください。`admin-users`は`verify_jwt = false`でデプロイしますが、関数内でBearer tokenを`auth.getUser`へ渡し、有効な管理者ロールまで明示的に再検証します。
 
-### 3. テストアカウントを作成
+### 4. テストアカウントを作成
 
 サービスロールキーはSupabase Dashboardの Project Settings → API Keys から取得し、実行するシェルの環境変数にだけ設定します。
 
@@ -66,15 +77,23 @@ node scripts/setup-final-workflow-test-users.mjs
 
 同じメールアドレスが存在する場合は再利用し、プロフィールと部署設定を更新するため、再実行できます。
 
-### 4. フロントエンドを起動
+### 5. フロントエンドを設定して起動
+
+構築先SupabaseプロジェクトのProject URLとPublishable Keyを設定します。Secret KeyまたはService Role Keyはフロントエンドへ記載しません。
+
+```bash
+cp apps/final-workflow/config.example.js apps/final-workflow/config.js
+```
+
+コピー後、`apps/final-workflow/config.js` の `YOUR_SUPABASE_PROJECT_URL` と `YOUR_SUPABASE_PUBLISHABLE_KEY` を置き換えます。
 
 ```bash
 python3 -m http.server 8000
 ```
 
-[http://localhost:8000/apps/final-workflow/](http://localhost:8000/apps/final-workflow/) を開きます。別のSupabaseプロジェクトを使う場合は `apps/final-workflow/config.example.js` を `config.js` としてコピーし、公開可能なProject URLとPublishable Keyだけを設定します。
+[http://localhost:8000/apps/final-workflow/](http://localhost:8000/apps/final-workflow/) を開きます。
 
-### 5. テストを実施
+### 6. テストを実施
 
 必須8シナリオは、次のコマンドでAPIレベルの自動検証を実行できます。
 
